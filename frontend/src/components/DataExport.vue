@@ -3,7 +3,7 @@
     <div class="tab-card-wrapper">
       <div style="text-align: center; margin-bottom: 30px;">
         <h2>数据导出</h2>
-        <p style="color: #909399;">选择您需要的导出格式。请注意，明文导出存在安全风险。</p>
+        <p style="color: var(--el-text-color-secondary);">选择您需要的导出格式。请注意，明文导出存在安全风险。</p>
       </div>
 
       <div style="max-width: 600px; margin: 0 auto;">
@@ -126,17 +126,3 @@ const executeExport = async () => {
   } catch (error) {} finally { isExporting.value = false }
 }
 </script>
-
-<style scoped>
-.tab-card-wrapper {
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-  min-height: 400px;
-}
-
-.export-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-.export-options .el-button { margin: 0; justify-content: flex-start; padding-left: 20px; height: auto; padding-top: 15px; padding-bottom: 15px; }
-@media (max-width: 768px) { .export-options { grid-template-columns: 1fr; } }
-</style>

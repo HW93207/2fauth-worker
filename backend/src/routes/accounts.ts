@@ -77,6 +77,11 @@ accounts.get('/', async (c) => {
     return c.json(response);
 });
 
+// 获取服务器当前时间 (用于时间校准)
+accounts.get('/server-time', (c) => {
+    return c.json({ success: true, time: Date.now() });
+});
+
 // 添加新账号
 accounts.post('/', async (c) => {
     const { service, category, account, secret, digits = 6, period = 30 } = await c.req.json();

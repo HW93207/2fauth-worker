@@ -117,9 +117,9 @@
           </div>
           <div v-if="!(isEditing && hasExistingAutoPwd && configUseExistingAutoPwd)" style="width: 100%;">
             <el-input v-model="form.autoBackupPassword" type="password" show-password placeholder="输入加密密码" />
-            <div class="form-tip" style="font-size: 12px; color: #909399; margin-top: 5px;"><span style="color: #F56C6C;">*</span> 必填项，长度必须 &ge; 12 位。</div>
+            <div class="form-tip"><span style="color: #F56C6C;">*</span> 必填项，长度必须 &ge; 12 位。</div>
           </div>
-          <div v-else style="padding: 10px; background-color: #f0f9eb; border-radius: 4px; color: #67C23A; font-size: 13px; display: flex; align-items: center; gap: 8px; width: 100%;">
+          <div v-else class="success-tip">
             <el-icon><CircleCheck /></el-icon><span>系统将继续使用原有的自动备份密码。</span>
           </div>
         </el-form-item>
@@ -145,7 +145,7 @@
       <div v-if="!useAutoPassword">
         <el-input v-model="backupPassword" type="password" show-password placeholder="输入加密密码 (至少12位)" />
       </div>
-      <div v-else style="padding: 10px; background-color: #f0f9eb; border-radius: 4px; color: #67C23A; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+      <div v-else class="success-tip">
         <el-icon><CircleCheck /></el-icon>
         <span>系统将使用您预设的自动备份密码进行加密。</span>
       </div>
@@ -399,13 +399,3 @@ const handleRestore = async () => {
 
 onMounted(fetchProviders)
 </script>
-
-<style scoped>
-.header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.provider-card { height: 100%; }
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.provider-info { display: flex; align-items: center; }
-.provider-title { display: flex; align-items: center; gap: 8px; font-weight: bold; flex-wrap: wrap; }
-.status-text { font-size: 13px; color: #666; margin-bottom: 15px; }
-.action-buttons { display: flex; gap: 10px; }
-</style>

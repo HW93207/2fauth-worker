@@ -13,34 +13,3 @@
 <script setup>
 // 这里可以添加页脚需要的逻辑，例如版本号显示等
 </script>
-
-<style scoped>
-.global-footer {
-  width: 100%;
-  padding: 0.25rem 0;
-  background-color: #f8f9fa;
-  border-top: 1px solid #e9ecef;
-  text-align: center;
-  margin-top: auto;
-}
-
-.footer-content {
-  color: #6c757d;
-  font-size: 0.875rem;
-}
-
-.divider {
-  margin: 0 0.5rem;
-  color: #dee2e6;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-a:hover {
-  color: #409EFF;
-}
-</style>

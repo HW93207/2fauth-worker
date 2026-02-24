@@ -16,7 +16,7 @@
         />
         
         <div class="batch-actions" v-if="selectedIds.length > 0" style="display: flex; align-items: center; gap: 10px;">
-          <span style="color: #606266; font-size: 14px;">已选择 {{ selectedIds.length }} 项</span>
+          <span class="batch-text">已选择 {{ selectedIds.length }} 项</span>
           <el-button type="danger" plain @click="handleBulkDelete" :loading="isBulkDeleting">
             <el-icon><Delete /></el-icon> 批量删除
           </el-button>
@@ -31,9 +31,9 @@
         <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="account in accounts" :key="account.id" style="margin-bottom: 20px;">
           <el-card class="account-card" :class="{ 'is-selected': selectedIds.includes(account.id) }" shadow="hover" @click="copyCode(account)">
             <div class="card-header">
-              <div class="service-info" style="display: flex; align-items: center; gap: 10px;">
+              <div class="service-info">
                 <el-checkbox :model-value="selectedIds.includes(account.id)" @change="toggleSelection(account.id)" @click.stop />
-                <h3 class="service-name">{{ account.service }}</h3>
+                <h3 class="service-name" :title="account.service">{{ account.service }}</h3>
                 <el-tag size="small" v-if="account.category" effect="light">{{ account.category }}</el-tag>
               </div>
               
@@ -55,7 +55,7 @@
               </el-dropdown>
             </div>
             
-            <p class="account-name" style="margin-left: 24px;">{{ account.account }}</p>
+            <p class="account-name">{{ account.account }}</p>
             
             <div class="code-display-area">
               <div class="code-left">
@@ -73,7 +73,7 @@
                   :color="account.color || '#67C23A'"
                 >
                   <template #default>
-                    <span class="timer-text-small">{{ account.remaining || 30 }}</span>
+                    <span class="timer-text">{{ account.remaining || 30 }}</span>
                   </template>
                 </el-progress>
               </div>
@@ -444,47 +444,3 @@ onUnmounted(() => {
   if (globalTimer) clearInterval(globalTimer)
 })
 </script>
-
-<style scoped>
-.account-card { border-radius: 12px; transition: all 0.3s ease; border: none; cursor: pointer; }
-.account-card:hover { transform: translateY(-5px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important; }
-.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-.service-name { margin: 0 0 5px 0; font-size: 18px; color: #303133; }
-.account-name { color: #909399; font-size: 14px; margin: 0 0 10px 0; word-break: break-all; }
-.more-icon { cursor: pointer; color: #909399; padding: 5px; }
-.more-icon:hover { color: #409EFF; }
-.account-card.is-selected { border: 1px solid #409EFF; background-color: #f4f9ff; }
-
-.code-display-area { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-left: 24px; }
-.code-left { display: flex; flex-direction: column; justify-content: center; }
-.current-code { font-size: 24px; font-weight: bold; color: #409EFF; letter-spacing: 2px; line-height: 1; font-family: monospace; }
-.next-code { font-size: 16px; color: #909399; margin-top: 4px; font-family: monospace; }
-.timer-text-small { font-size: 12px; color: #606266; font-weight: bold; display: block; text-align: center; }
-:deep(.el-progress__text) { 
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transform: none; /* 移除默认的偏移，由 Flex 接管 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width:30px;
-}
-
-.qr-container { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.qr-info { margin-bottom: 15px; }
-.qr-service { margin: 0 0 5px 0; font-size: 20px; color: #303133; }
-.qr-account { margin: 0; color: #909399; font-size: 14px; }
-.qr-image-wrapper { margin: 10px 0; padding: 10px; background: #fff; border-radius: 8px; border: 1px solid #EBEEF5; }
-.qr-code-img { display: block; width: 200px; height: 200px; }
-.qr-tip { font-size: 12px; color: #606266; margin: 10px 0 20px 0; }
-
-.secret-section { width: 100%; margin-bottom: 15px; }
-.secret-box { display: flex; align-items: center; justify-content: space-between; background: #f5f7fa; padding: 10px 15px; border-radius: 6px; border: 1px solid #e4e7ed; }
-.secret-text { font-family: monospace; font-size: 14px; color: #606266; letter-spacing: 1px; }
-.secret-actions { display: flex; gap: 15px; }
-.action-icon { cursor: pointer; font-size: 16px; color: #909399; transition: color 0.2s; }
-.action-icon:hover { color: #409EFF; }
-.uri-link-wrapper { margin-top: 5px; }
-</style>

@@ -32,25 +32,3 @@ onBeforeUnmount(() => {
     <TheFooter />
   </div>
 </template>
-
-<style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
-.app-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh; /* 改为固定高度，以便内部滚动 */
-  overflow: hidden;
-}
-main {
-  flex: 1;
-  overflow: hidden; /* 防止 main 自身滚动，让子元素决定 */
-  display: flex;
-  flex-direction: column;
-}
-</style>

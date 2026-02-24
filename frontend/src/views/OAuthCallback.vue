@@ -89,21 +89,3 @@ const goBackToLogin = () => {
   router.push('/login')
 }
 </script>
-
-<style scoped>
-.callback-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  background: transparent;
-}
-
-.loading-card {
-  width: 100%;
-  max-width: 420px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-}
-</style>

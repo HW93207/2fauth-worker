@@ -88,13 +88,3 @@ const submitAddAccount = async () => {
   })
 }
 </script>
-
-<style scoped>
-.tab-card-wrapper {
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-  min-height: 400px;
-}
-</style>
