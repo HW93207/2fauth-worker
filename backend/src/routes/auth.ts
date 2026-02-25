@@ -79,7 +79,7 @@ auth.post('/callback/:provider', async (c) => {
             id: userInfo.id,
             username: userInfo.username,
             email: userInfo.email,
-            avatar_template: userInfo.avatar,
+            avatar: userInfo.avatar,
             provider: userInfo.provider
         }
     };

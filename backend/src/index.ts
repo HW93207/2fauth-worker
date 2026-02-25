@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
-import { EnvBindings } from './config';
+import { EnvBindings, CSP_POLICY } from './config';
 
 // 稍后我们会在这里引入拆分好的路由模块
 import authRoutes from './routes/auth';
@@ -29,10 +29,10 @@ app.use('/api/*', cors({
 app.use('*', secureHeaders({
     contentSecurityPolicy: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Vue/Vite 需要 unsafe-eval/inline
+        scriptSrc: CSP_POLICY.SCRIPTS, // 使用 config.ts 中的配置
         styleSrc: ["'self'", "'unsafe-inline'"], // Element Plus 需要 unsafe-inline
-        imgSrc: ["'self'", "data:", "blob:", "https://avatars.githubusercontent.com"], // 允许 GitHub 头像和 Base64 二维码
-        connectSrc: ["'self'", "https://api.github.com", "https://github.com"], // 允许连接 GitHub API
+        imgSrc: CSP_POLICY.IMAGES,     // 使用 config.ts 中的配置
+        connectSrc: CSP_POLICY.CONNECT,// 使用 config.ts 中的配置
         fontSrc: ["'self'", "data:"],
         workerSrc: ["'self'", "blob:"], // 允许 Service Worker
         objectSrc: ["'none'"], // 禁止 Flash 等插件

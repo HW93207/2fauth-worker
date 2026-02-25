@@ -24,7 +24,8 @@ export const userState = reactive({
 
   async fetchUserInfo() {
     try {
-      const data = await request('/api/oauth/me')
+      // 使用 silent: true 避免未登录时弹出 "Unauthorized" 错误提示
+      const data = await request('/api/oauth/me', { silent: true })
       if (data.success) {
         this.setUserInfo(data.userInfo)
         return true

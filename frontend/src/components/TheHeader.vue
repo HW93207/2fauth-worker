@@ -9,7 +9,9 @@
     </div>
     <div class="user-actions" v-if="route.path !== '/login'">
       <div class="user-profile" v-if="!layoutState.isMobile">
-        <el-avatar :size="32" :src="userState.userInfo?.avatar_template" />
+        <el-avatar :size="32" :src="userState.userInfo?.avatar">
+          {{ userState.userInfo?.username?.charAt(0)?.toUpperCase() }}
+        </el-avatar>
         <span class="username">{{ userState.userInfo?.username }}</span>
       </div>
     </div>

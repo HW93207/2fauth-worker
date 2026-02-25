@@ -15,7 +15,8 @@
           size="large"
           class="oauth-btn"
           :style="{ backgroundColor: provider.color, borderColor: provider.color }"
-          :loading="loading"
+          :loading="loadingProvider === provider.id"
+          :disabled="!!loadingProvider && loadingProvider !== provider.id"
           @click="handleLogin(provider.id)"
         >
           <template #icon>
@@ -30,7 +31,7 @@
         <el-alert
           title="安全隐私提示"
           type="info"
-          description="系统基于 OAuth 2.0 协议验证身份，绝不会获取、记录或传输您的 GitHub 密码信息。"
+          description="系统基于 OAuth 2.0 协议验证身份，绝不会获取、记录或传输您的密码信息。"
           show-icon
           :closable="false"
         />
@@ -44,15 +45,28 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Lock, Platform } from '@element-plus/icons-vue'
 
-const loading = ref(false)
+const loadingProvider = ref(null)
 const providers = ref([])
+const CACHE_KEY = 'oauth_providers_cache'
 
 onMounted(async () => {
+  // 1. 优先从缓存读取，实现秒开
+  const cached = localStorage.getItem(CACHE_KEY)
+  if (cached) {
+    try {
+      providers.value = JSON.parse(cached)
+    } catch (e) {
+      console.warn('Invalid cache', e)
+    }
+  }
+
+  // 2. 后台请求接口更新数据 (Stale-while-revalidate 策略)
   try {
     const res = await fetch('/api/oauth/providers')
     const data = await res.json()
     if (data.success) {
       providers.value = data.providers
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data.providers))
     }
   } catch (e) {
     console.error('Failed to load providers', e)
@@ -60,7 +74,7 @@ onMounted(async () => {
 })
 
 const handleLogin = async (providerId) => {
-  loading.value = true
+  loadingProvider.value = providerId
   try {
     // 1. 获取授权链接
     const response = await fetch(`/api/oauth/authorize/${providerId}`)
@@ -77,12 +91,12 @@ const handleLogin = async (providerId) => {
       window.location.href = data.authUrl
     } else {
       ElMessage.error(data.error || '获取授权链接失败')
-      loading.value = false
+      loadingProvider.value = null
     }
   } catch (error) {
     console.error('Login error:', error)
     ElMessage.error('网络请求失败，请检查后端 API 是否正常运行')
-    loading.value = false
+    loadingProvider.value = null
   }
 }
 </script>

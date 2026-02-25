@@ -11,6 +11,35 @@ export const SECURITY_CONFIG = {
     MAX_FILE_SIZE: 10 * 1024 * 1024,
 };
 
+// ==========================================
+// CSP 内容安全策略配置 (集中管理域名白名单)
+// ==========================================
+export const CSP_POLICY = {
+    // 脚本源: 允许本站、内联脚本(Vue必需) 以及 Cloudflare 统计脚本
+    SCRIPTS: [
+        "'self'",
+        "'unsafe-inline'",
+        "'unsafe-eval'",
+        "https://static.cloudflareinsights.com",
+    ],
+    // 图片源: 允许本站、GitHub 头像、NodeLoc 头像
+    IMAGES: [
+        "'self'",
+        "data:",
+        "blob:",
+        "https://avatars.githubusercontent.com",
+        "https://www.nodeloc.com",
+    ],
+    // 连接源: 允许 API 请求、Cloudflare 统计上报
+    CONNECT: [
+        "'self'",
+        "https://api.github.com",
+        "https://github.com",
+        "https://cloudflareinsights.com",
+        "https://static.cloudflareinsights.com",
+    ],
+};
+
 // Cloudflare Workers 环境变量类型定义
 export type EnvBindings = {
     DB: D1Database;

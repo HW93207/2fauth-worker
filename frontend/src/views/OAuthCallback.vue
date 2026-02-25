@@ -43,12 +43,19 @@ onMounted(async () => {
   const error = route.query.error
   const providerId = localStorage.getItem('oauth_provider') || 'github'
   
-  // 直接从 API 获取提供商名称用于展示
+  // 优化：优先从缓存读取提供商名称，避免不必要的网络请求
   try {
-    const res = await fetch('/api/oauth/providers')
-    const data = await res.json()
-    const p = data.providers?.find(x => x.id === providerId)
-    if (p) providerName.value = p.name
+    const cached = localStorage.getItem('oauth_providers_cache')
+    if (cached) {
+      const providers = JSON.parse(cached)
+      const p = providers.find(x => x.id === providerId)
+      if (p) providerName.value = p.name
+    } else {
+      const res = await fetch('/api/oauth/providers')
+      const data = await res.json()
+      const p = data.providers?.find(x => x.id === providerId)
+      if (p) providerName.value = p.name
+    }
   } catch (e) {}
 
   if (error) {

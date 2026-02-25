@@ -78,7 +78,7 @@ export class NodeLocProvider extends BaseOAuthProvider {
             id: String(userData.id),
             username: userData.username || userData.name || userData.nickname,
             email: userData.email || '',
-            avatar: userData.avatar || userData.avatar_url || '',
+            avatar: userData.avatar || userData.avatar_url || userData.avatarUrl || '',
             provider: this.id
         };
     }

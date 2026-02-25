@@ -34,6 +34,11 @@ export async function request(url, options = {}) {
 
         // 4. 更新：处理 401/403 未登录或 CSRF 失败
         if (response.status === 401 || response.status === 403) {
+            // 如果开启了静默模式 (silent)，则不弹窗、不自动跳转，直接抛出错误由调用方处理
+            if (options.silent) {
+                throw new Error(data.error || 'Unauthorized/Forbidden')
+            }
+
             ElMessage.error(data.error || '会话已过期或权限不足，请重新登录')
             localStorage.removeItem('userInfo')
             if (router.currentRoute.value.path !== '/login') router.push('/login')
