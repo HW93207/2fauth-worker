@@ -14,11 +14,17 @@ export const SECURITY_CONFIG = {
 // Cloudflare Workers 环境变量类型定义
 export type EnvBindings = {
     DB: D1Database;
-    OAUTH_BASE_URL: string;
-    OAUTH_CLIENT_ID: string;
-    OAUTH_CLIENT_SECRET: string;
-    OAUTH_REDIRECT_URI: string;
-    OAUTH_ID: string;
+    OAUTH_GITHUB_CLIENT_ID: string;
+    OAUTH_GITHUB_CLIENT_SECRET: string;
+    OAUTH_GITHUB_REDIRECT_URI: string;
+    OAUTH_CLOUDFLARE_CLIENT_ID?: string;
+    OAUTH_CLOUDFLARE_CLIENT_SECRET?: string;
+    OAUTH_CLOUDFLARE_ORG_DOMAIN?: string; // 例如 https://your-team.cloudflareaccess.com
+    OAUTH_CLOUDFLARE_REDIRECT_URI?: string;
+    OAUTH_NODELOC_CLIENT_ID?: string;
+    OAUTH_NODELOC_CLIENT_SECRET?: string;
+    OAUTH_NODELOC_REDIRECT_URI?: string;
+    OAUTH_ALLOWED_USERS: string;    // 允许登录的 Email 或 Username 白名单 (必填)
     JWT_SECRET: string;
     ENCRYPTION_KEY: string;
 };

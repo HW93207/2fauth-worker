@@ -2,9 +2,7 @@ import { Hono } from 'hono';
 import { EnvBindings, AppError, SECURITY_CONFIG } from '../config';
 import { authMiddleware, sanitizeInput } from '../utils/helper';
 import { encryptData, decryptData } from '../utils/crypto';
-import { BackupProvider } from '../providers/BackupProvider';
-import { WebDavProvider } from '../providers/WebDavProvider';
-import { S3Provider } from '../providers/S3Provider';
+import { BackupProvider, WebDavProvider, S3Provider } from '../providers/backup';
 import { batchInsertAccounts, decryptField } from '../utils/db';
 
 const backups = new Hono<{ Bindings: EnvBindings, Variables: { user: any } }>();

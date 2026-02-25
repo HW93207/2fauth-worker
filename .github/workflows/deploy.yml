@@ -63,18 +63,30 @@ jobs:
           workingDirectory: 'backend'
           command: deploy --minify
           secrets: |
-            OAUTH_CLIENT_ID
-            OAUTH_CLIENT_SECRET
-            OAUTH_BASE_URL
-            OAUTH_ID
-            OAUTH_REDIRECT_URI
+            OAUTH_ALLOWED_USERS
+            OAUTH_GITHUB_CLIENT_ID
+            OAUTH_GITHUB_CLIENT_SECRET
+            OAUTH_GITHUB_REDIRECT_URI
+            OAUTH_CLOUDFLARE_CLIENT_ID
+            OAUTH_CLOUDFLARE_CLIENT_SECRET
+            OAUTH_CLOUDFLARE_ORG_DOMAIN
+            OAUTH_CLOUDFLARE_REDIRECT_URI
+            OAUTH_NODELOC_CLIENT_ID
+            OAUTH_NODELOC_CLIENT_SECRET
+            OAUTH_NODELOC_REDIRECT_URI
             ENCRYPTION_KEY
             JWT_SECRET
         env:
-          OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
-          OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
-          OAUTH_BASE_URL: ${{ secrets.OAUTH_BASE_URL || 'https://github.com' }}
-          OAUTH_ID: ${{ secrets.OAUTH_ID }}
-          OAUTH_REDIRECT_URI: ${{ secrets.OAUTH_REDIRECT_URI }}
+          OAUTH_ALLOWED_USERS: ${{ secrets.OAUTH_ALLOWED_USERS }}
+          OAUTH_GITHUB_CLIENT_ID: ${{ secrets.OAUTH_GITHUB_CLIENT_ID }}
+          OAUTH_GITHUB_CLIENT_SECRET: ${{ secrets.OAUTH_GITHUB_CLIENT_SECRET }}
+          OAUTH_GITHUB_REDIRECT_URI: ${{ secrets.OAUTH_GITHUB_REDIRECT_URI }}
+          OAUTH_CLOUDFLARE_CLIENT_ID: ${{ secrets.OAUTH_CLOUDFLARE_CLIENT_ID }}
+          OAUTH_CLOUDFLARE_CLIENT_SECRET: ${{ secrets.OAUTH_CLOUDFLARE_CLIENT_SECRET }}
+          OAUTH_CLOUDFLARE_ORG_DOMAIN: ${{ secrets.OAUTH_CLOUDFLARE_ORG_DOMAIN }}
+          OAUTH_CLOUDFLARE_REDIRECT_URI: ${{ secrets.OAUTH_CLOUDFLARE_REDIRECT_URI }}
+          OAUTH_NODELOC_CLIENT_ID: ${{ secrets.OAUTH_NODELOC_CLIENT_ID }}
+          OAUTH_NODELOC_CLIENT_SECRET: ${{ secrets.OAUTH_NODELOC_CLIENT_SECRET }}
+          OAUTH_NODELOC_REDIRECT_URI: ${{ secrets.OAUTH_NODELOC_REDIRECT_URI }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}

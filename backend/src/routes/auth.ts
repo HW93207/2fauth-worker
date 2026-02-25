@@ -3,103 +3,84 @@ import { setCookie } from 'hono/cookie';
 import { EnvBindings, AppError } from '../config';
 import { generateSecureJWT } from '../utils/crypto';
 import { authMiddleware } from '../utils/helper';
+import { getOAuthProvider, getAvailableProviders } from '../providers/oauth/index';
 
 const auth = new Hono<{ Bindings: EnvBindings, Variables: { user: any } }>();
 
-// 内部辅助函数：获取 GitHub 用户信息
-async function fetchGitHubUser(accessToken: string, oauthBaseUrl: string) {
-    const isGitHub = oauthBaseUrl.includes('github.com');
-    const url = isGitHub ? 'https://api.github.com/user' : `${oauthBaseUrl}/api/user`;
-    
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Authorization': `token ${accessToken}`,
-            'Accept': 'application/json',
-            'User-Agent': '2FA-Manager-Backend/1.0'
-        }
-    });
-    
-    if (!response.ok) {
-        throw new AppError(`GitHub API error: ${response.status}`, 502);
-    }
-    return await response.json();
-}
+// ==========================================
+// 0. 获取可用登录方式列表 (新增)
+// ==========================================
+auth.get('/providers', (c) => {
+    const providers = getAvailableProviders(c.env);
+    return c.json({ success: true, providers });
+});
 
 // ==========================================
-// 1. 获取授权地址 (前端调用此接口获取跳转链接)
+// 1. 获取授权地址 (支持动态 Provider)
 // ==========================================
-auth.get('/authorize', async (c) => {
+auth.get('/authorize/:provider', async (c) => {
+    const providerName = c.req.param('provider');
     const state = crypto.randomUUID();
     const env = c.env;
-    const isGitHub = env.OAUTH_BASE_URL.includes('github.com');
-    const authPath = isGitHub ? '/login/oauth/authorize' : '/oauth2/authorize';
     
-    const params = new URLSearchParams({
-        client_id: env.OAUTH_CLIENT_ID,
-        redirect_uri: env.OAUTH_REDIRECT_URI, // 注意：后续在环境变量中，这里要填入 Vue 前端的地址
-        state: state,
-        scope: isGitHub ? 'read:user user:email' : 'openid profile email'
-    });
-
-    const authUrl = `${env.OAUTH_BASE_URL.replace(/\/$/, '')}${authPath}?${params}`;
-
-    // 返回 URL 和 State 让 Vue 前端存入 localStorage 后自行跳转
-    return c.json({ success: true, authUrl, state });
+    try {
+        const provider = getOAuthProvider(providerName, env);
+        const result = await provider.getAuthorizeUrl(state);
+        return c.json({ success: true, authUrl: result.url, state, codeVerifier: result.codeVerifier });
+    } catch (e: any) {
+        throw new AppError(e.message || 'Provider not supported', 400);
+    }
 });
 
 // ==========================================
 // 2. 核心逻辑：用 Code 换取系统的 JWT 令牌
 // ==========================================
-auth.post('/callback', async (c) => {
-    const { code } = await c.req.json();
+auth.post('/callback/:provider', async (c) => {
+    const providerName = c.req.param('provider');
+    const { code, codeVerifier } = await c.req.json(); // 接收前端传回的 codeVerifier
     const env = c.env;
 
     if (!code) {
         throw new AppError('Missing OAuth code', 400);
     }
 
-    const isGitHub = env.OAUTH_BASE_URL.includes('github.com');
-    const tokenPath = isGitHub ? '/login/oauth/access_token' : '/oauth2/token';
+    const provider = getOAuthProvider(providerName, env);
+    const userInfo = await provider.handleCallback(code, codeVerifier);
 
-    // 去 GitHub 换取 Access Token
-    const tokenResponse = await fetch(`${env.OAUTH_BASE_URL.replace(/\/$/, '')}${tokenPath}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json',
-            'User-Agent': '2FA-Manager-Backend/1.0'
-        },
-        body: new URLSearchParams({
-            client_id: env.OAUTH_CLIENT_ID,
-            client_secret: env.OAUTH_CLIENT_SECRET,
-            code: code,
-            redirect_uri: env.OAUTH_REDIRECT_URI,
-        })
-    });
+    // 严密的安全校验：基于 Email 或 Username 的白名单 (OAUTH_WHITELIST)
+    const allowedUsersStr = env.OAUTH_ALLOWED_USERS || '';
+    const allowedIdentities = allowedUsersStr.split(',').map((e: string) => e.trim().toLowerCase()).filter(Boolean);
+    
+    const userEmail = (userInfo.email || '').toLowerCase();
+    const userName = (userInfo.username || '').toLowerCase();
 
-    const tokenData = await tokenResponse.json();
-    if (!tokenData.access_token) {
-        throw new AppError('Failed to exchange code for token', 502);
-    }
+    // 如果白名单不为空，则必须匹配允许的字段 (Email 或 Username)
+    if (allowedIdentities.length && env.OAUTH_ALLOWED_USERS !== env.JWT_SECRET) {
+        let isAllowed = false;
 
-    // 获取用户信息
-    const userData = await fetchGitHubUser(tokenData.access_token, env.OAUTH_BASE_URL);
+        // 1. 检查 Email (如果 Provider 允许)
+        if (provider.whitelistFields.includes('email') && userEmail && allowedIdentities.includes(userEmail)) {
+            isAllowed = true;
+        }
+        
+        // 2. 检查 Username (如果 Provider 允许)
+        if (provider.whitelistFields.includes('username') && userName && allowedIdentities.includes(userName)) {
+            isAllowed = true;
+        }
 
-    // 严密的安全校验：比对 OAUTH_ID (改为比对用户名)
-    // GitHub API 返回的用户名在 login 字段，这里统一转小写比较以防大小写差异
-    const currentUsername = userData.login || userData.username;
-    if (!currentUsername || currentUsername.toLowerCase() !== env.OAUTH_ID.toLowerCase()) {
-        throw new AppError('Unauthorized user', 403);
+        if (! isAllowed) {
+            throw new AppError(`Unauthorized user. Email: ${userEmail}, Username: ${username}`, 403);
+        }
     }
 
     // 签发我们系统的专属 JWT 令牌
     const payload = {
         userInfo: {
-            id: userData.id,
-            username: userData.login || userData.username || 'GitHub User',
-            email: userData.email,
-            avatar_template: userData.avatar_url || userData.avatar_template
+            id: userInfo.id,
+            username: userInfo.username,
+            email: userInfo.email,
+            avatar_template: userInfo.avatar,
+            provider: userInfo.provider
         }
     };
 

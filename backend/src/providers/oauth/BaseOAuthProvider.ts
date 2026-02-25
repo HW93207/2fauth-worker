@@ -1,0 +1,30 @@
+import { EnvBindings } from '../../config';
+
+export interface OAuthUserInfo {
+    id: string;
+    email: string;
+    username: string;
+    avatar?: string;
+    provider: string; // 记录来源，如 'github'
+}
+
+export abstract class BaseOAuthProvider {
+    protected env: EnvBindings;
+
+    constructor(env: EnvBindings) {
+        this.env = env;
+    }
+
+    abstract readonly id: string;
+    abstract readonly name: string;
+    abstract readonly color: string; // 按钮背景色
+    abstract readonly icon: string; // 前端图标 SVG 代码 (完整 <svg> 标签)
+    abstract readonly whitelistFields: string[]; // 新增：定义该 Provider 支持哪些白名单字段 (如 ['email', 'username'])
+
+    // 1. 获取授权跳转链接
+    // 返回对象包含 url 和可选的 codeVerifier (用于 PKCE)
+    abstract getAuthorizeUrl(state: string): Promise<{ url: string, codeVerifier?: string }> | { url: string, codeVerifier?: string };
+
+    // 2. 处理回调：Code -> Token -> UserInfo
+    abstract handleCallback(code: string, codeVerifier?: string): Promise<OAuthUserInfo>;
+}

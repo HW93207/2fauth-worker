@@ -5,7 +5,7 @@
         v-if="!errorMsg"
         icon="info"
         title="正在安全登录中"
-        sub-title="请稍候，系统正在与 GitHub 交换安全凭证..."
+        :sub-title="`请稍候，系统正在与 ${providerName} 交换安全凭证...`"
       >
         <template #extra>
           <el-icon class="is-loading" :size="40" color="#409eff"><Loading /></el-icon>
@@ -35,14 +35,24 @@ import { userState } from '../states/user'
 const route = useRoute()
 const router = useRouter()
 const errorMsg = ref('')
+const providerName = ref('身份提供商')
 
 onMounted(async () => {
   const code = route.query.code
   const state = route.query.state
   const error = route.query.error
+  const providerId = localStorage.getItem('oauth_provider') || 'github'
+  
+  // 直接从 API 获取提供商名称用于展示
+  try {
+    const res = await fetch('/api/oauth/providers')
+    const data = await res.json()
+    const p = data.providers?.find(x => x.id === providerId)
+    if (p) providerName.value = p.name
+  } catch (e) {}
 
   if (error) {
-    errorMsg.value = route.query.error_description || '您拒绝了 GitHub 的授权请求'
+    errorMsg.value = route.query.error_description || `您拒绝了 ${providerName.value} 的授权请求`
     return
   }
 
@@ -53,18 +63,22 @@ onMounted(async () => {
 
   // 🛡️ 前端 State 校验：防止 CSRF 攻击
   const savedState = localStorage.getItem('oauth_state')
+  const codeVerifier = localStorage.getItem('oauth_code_verifier')
+
   if (!savedState || savedState !== state) {
     errorMsg.value = '安全警告：State 校验失败，请求可能被篡改'
     return
   }
   localStorage.removeItem('oauth_state') // 校验通过后立即清除，防止重放
+  localStorage.removeItem('oauth_provider')
+  localStorage.removeItem('oauth_code_verifier')
 
   try {
     // 关键步骤：把 code 发给后端换取我们自己的 JWT
-    const response = await fetch('/api/oauth/callback', {
+    const response = await fetch(`/api/oauth/callback/${providerId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, state })
+      body: JSON.stringify({ code, state, codeVerifier })
     })
 
     const data = await response.json()

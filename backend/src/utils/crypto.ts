@@ -93,6 +93,27 @@ export async function verifySecureJWT(token: string, secret: string): Promise<an
     }
 }
 
+// PKCE 辅助函数
+export function base64UrlEncode(str: Uint8Array): string {
+    let binary = '';
+    const len = str.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(str[i]);
+    }
+    return btoa(binary)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+}
+
+export async function generatePKCE() {
+    const verifierBytes = new Uint8Array(32);
+    crypto.getRandomValues(verifierBytes);
+    const verifier = base64UrlEncode(verifierBytes);
+    const challenge = base64UrlEncode(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))));
+    return { verifier, challenge };
+}
+
 // ==========================================
 // 3. AES-GCM 数据加解密 (用于保护 KV 里的 2FA 密钥)
 // ==========================================
