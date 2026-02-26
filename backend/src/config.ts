@@ -31,6 +31,7 @@ export const CSP_POLICY = {
         "https://t.me", // Telegram User Avatars
         "https://*.telesco.pe", // Telegram Avatar CDN
         "https://www.nodeloc.com",
+        "https://lh3.googleusercontent.com", // Google User Avatars
     ],
     // 连接源: 允许 API 请求、Cloudflare 统计上报
     CONNECT: [
@@ -39,6 +40,8 @@ export const CSP_POLICY = {
         "https://github.com",
         "https://cloudflareinsights.com",
         "https://static.cloudflareinsights.com",
+        "https://accounts.google.com",
+        "https://www.googleapis.com",
     ],
     // 框架源
     FRAMES: [
@@ -62,6 +65,9 @@ export type EnvBindings = {
     OAUTH_GITEE_CLIENT_ID?: string;
     OAUTH_GITEE_CLIENT_SECRET?: string;
     OAUTH_GITEE_REDIRECT_URI?: string;
+    OAUTH_GOOGLE_CLIENT_ID?: string;
+    OAUTH_GOOGLE_CLIENT_SECRET?: string;
+    OAUTH_GOOGLE_REDIRECT_URI?: string;
     OAUTH_TELEGRAM_BOT_NAME?: string; // e.g. MyAuthBot
     OAUTH_TELEGRAM_BOT_TOKEN?: string;
     OAUTH_ALLOWED_USERS: string;    // 允许登录的 Email 或 Username 白名单 (必填)

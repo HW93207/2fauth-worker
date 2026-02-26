@@ -28,8 +28,6 @@ async function generatePKCE() {
     return { verifier, challenge };
 }
 
-
-
 export class CloudflareAccessProvider extends BaseOAuthProvider {
     readonly id = 'cloudflare';
     readonly name = 'Cloudflare Access';

@@ -74,6 +74,9 @@ accounts.get('/', async (c) => {
         totalPages: Math.ceil(total / limit)
     };
 
+    // 关键修复：禁止浏览器缓存账号列表数据，确保用户添加/删除后能立即看到最新状态
+    c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    
     return c.json(response);
 });
 

@@ -186,8 +186,15 @@ const handleSuccess = () => {
 }
 
 const handleLogout = async () => {
+  // 1. 移动端优先关闭抽屉，防止遮挡或状态残留
+  if (layoutState.showMobileMenu) {
+    layoutState.showMobileMenu = false
+  }
+
   await userState.logout()
-  router.push('/login')
+  
+  // 2. 使用 replace 替换当前历史，避免用户点“后退”键又回到已退出的页面
+  router.replace('/login')
   ElMessage.success('已安全退出')
 }
 

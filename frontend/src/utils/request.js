@@ -41,7 +41,11 @@ export async function request(url, options = {}) {
 
             ElMessage.error(data.error || '会话已过期或权限不足，请重新登录')
             localStorage.removeItem('userInfo')
-            if (router.currentRoute.value.path !== '/login') router.push('/login')
+            
+            // 增加判断：确保 router 已就绪且当前不在登录页
+            if (router && router.currentRoute.value.path !== '/login') {
+                router.push('/login').catch(() => {}) // 捕获可能的 NavigationDuplicated 错误
+            }
             throw new Error(data.error || 'Unauthorized/Forbidden')
         }
 

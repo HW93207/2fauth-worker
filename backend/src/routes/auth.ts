@@ -12,6 +12,9 @@ const auth = new Hono<{ Bindings: EnvBindings, Variables: { user: any } }>();
 // ==========================================
 auth.get('/providers', (c) => {
     const providers = getAvailableProviders(c.env);
+    if (providers.length === 0) {
+        console.warn('[OAuth] No providers configured. Please check environment variables (e.g. .dev.vars).');
+    }
     // 注入 Telegram Bot Name 给前端 Widget 使用
     const enhancedProviders = providers.map(p => {
         if (p.id === 'telegram') {
@@ -139,8 +142,15 @@ auth.post('/callback/:provider', async (c) => {
 // 2.5 退出登录 (清除 Cookies)
 // ==========================================
 auth.post('/logout', (c) => {
-    deleteCookie(c, 'auth_token');
-    deleteCookie(c, 'csrf_token');
+    // 关键修复：删除 Cookie 时必须显式指定 path: '/'，否则默认是当前路径 (/api/oauth/)，导致无法删除根路径下的 Cookie
+    // 同时建议匹配 secure 和 sameSite 属性以确保精准命中
+    const cookieOpts = { path: '/', secure: true, sameSite: 'Strict' as const };
+    deleteCookie(c, 'auth_token', cookieOpts);
+    deleteCookie(c, 'csrf_token', cookieOpts);
+
+    // 增加防缓存头，防止某些浏览器或代理缓存了该请求的响应
+    c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
     return c.json({
         success: true,
         message: 'Logged out successfully'

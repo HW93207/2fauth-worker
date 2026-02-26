@@ -69,7 +69,10 @@ onMounted(async () => {
     const data = await res.json()
     if (data.success) {
       providers.value = data.providers
-      localStorage.setItem(CACHE_KEY, JSON.stringify(data.providers))
+      // 只有当后端返回了有效的登录方式时才更新缓存，防止因配置丢失导致客户端缓存被清空
+      if (data.providers && data.providers.length > 0) {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data.providers))
+      }
     }
   } catch (e) {
     console.error('Failed to load providers', e)

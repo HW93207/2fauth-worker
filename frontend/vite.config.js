@@ -53,7 +53,14 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'], // 缓存所有静态资源
-        navigateFallback: '/index.html' // 关键：SPA 单页应用离线必须回退到 index.html
+        navigateFallback: '/index.html', // 关键：SPA 单页应用离线必须回退到 index.html
+        // 关键修复：禁止 PWA 拦截 API 请求。防止 API 404/500 时返回 index.html 导致前端 JSON 解析报错
+        navigateFallbackDenylist: [/^\/api/],
+        // 明确 API 走网络优先策略 (NetworkOnly)，不进行缓存
+        runtimeCaching: [{
+          urlPattern: ({ url }) => url.pathname.startsWith('/api'),
+          handler: 'NetworkOnly'
+        }]
       }
     })
   ],

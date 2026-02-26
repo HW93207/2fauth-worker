@@ -5,6 +5,7 @@ import { CloudflareAccessProvider } from './CloudflareAccessProvider';
 import { NodeLocProvider } from './NodeLocProvider';
 import { GiteeProvider } from './GiteeProvider';
 import { TelegramProvider } from './TelegramProvider';
+import { GoogleProvider } from './GoogleProvider';
 
 export function getOAuthProvider(providerId: string, env: EnvBindings): BaseOAuthProvider {
     switch (providerId.toLowerCase()) {
@@ -18,6 +19,8 @@ export function getOAuthProvider(providerId: string, env: EnvBindings): BaseOAut
             return new NodeLocProvider(env);
         case 'telegram':
             return new TelegramProvider(env);
+        case 'google':
+            return new GoogleProvider(env);
         default:
             throw new AppError(`Provider '${providerId}' is not supported`, 400);
     }
@@ -31,6 +34,16 @@ export function getAvailableProviders(env: EnvBindings) {
     const nodelocProvider = new NodeLocProvider(env);
     const giteeProvider = new GiteeProvider(env);
     const telegramProvider = new TelegramProvider(env);
+    const googleProvider = new GoogleProvider(env);
+
+    if (env.OAUTH_GOOGLE_CLIENT_ID && env.OAUTH_GOOGLE_CLIENT_SECRET) {
+        providers.push({
+            id: googleProvider.id,
+            name: googleProvider.name,
+            icon: googleProvider.icon,
+            color: googleProvider.color,
+        });
+    }
 
     if (env.OAUTH_GITHUB_CLIENT_ID && env.OAUTH_GITHUB_CLIENT_SECRET) {
         providers.push({
