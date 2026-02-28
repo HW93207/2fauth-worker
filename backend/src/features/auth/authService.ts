@@ -80,14 +80,19 @@ export class AuthService {
      * 白名单校验
      */
     private verifyWhitelist(userInfo: OAuthUserInfo, whitelistFields: string[]) {
+        // 如果 explicitly allowed all, 则放行
+        const allowAllStr = String(this.env.OAUTH_ALLOW_ALL || '').toLowerCase();
+        if (allowAllStr === 'true' || allowAllStr === '1') {
+            return;
+        }
+
         const allowedUsersStr = this.env.OAUTH_ALLOWED_USERS || '';
         const allowedIdentities = allowedUsersStr.split(',').map((e: string) => e.trim().toLowerCase()).filter(Boolean);
 
-        const userEmail = (userInfo.email || '').toLowerCase();
-        const userName = (userInfo.username || '').toLowerCase();
-
-        // 仅在配置了白名单且 OAUTH_ALLOWED_USERS 开发用的特定值不同时校验
-        if (allowedIdentities.length > 0 && this.env.OAUTH_ALLOWED_USERS !== this.env.JWT_SECRET) {
+        // 如果配置了白名单，严格执行
+        if (allowedIdentities.length > 0) {
+            const userEmail = (userInfo.email || '').toLowerCase();
+            const userName = (userInfo.username || '').toLowerCase();
             let isAllowed = false;
 
             if (whitelistFields.includes('email') && userEmail && allowedIdentities.includes(userEmail)) {
@@ -101,6 +106,9 @@ export class AuthService {
             if (!isAllowed) {
                 throw new AppError(`Unauthorized user. Email: ${userEmail}, Username: ${userName}`, 403);
             }
+        } else {
+            // 默认安全策略：如果未配置白名单，未开启 ALLOW_ALL，则拒绝所有人（或者也可以记录警告，但为了安全通常应拒绝）
+            throw new AppError(`No authorization whitelist configured. Login denied.`, 403);
         }
     }
 

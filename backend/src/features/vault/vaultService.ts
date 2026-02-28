@@ -12,7 +12,12 @@ export class VaultService {
     constructor(env: EnvBindings, repository: VaultRepository) {
         this.env = env;
         this.repository = repository;
-        this.encryptionKey = env.ENCRYPTION_KEY || env.JWT_SECRET;
+
+        if (!env.ENCRYPTION_KEY) {
+            throw new AppError('FATAL ERROR: ENCRYPTION_KEY is not configured.', 500);
+        }
+
+        this.encryptionKey = env.ENCRYPTION_KEY;
     }
 
     /**

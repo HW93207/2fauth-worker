@@ -71,6 +71,7 @@ export type EnvBindings = {
     OAUTH_TELEGRAM_BOT_NAME?: string;
     OAUTH_TELEGRAM_BOT_TOKEN?: string;
     OAUTH_ALLOWED_USERS: string;    // 允许登录的 Email 或 Username 白名单 (必填)
+    OAUTH_ALLOW_ALL?: string;       // 是否允许所有用户登录 (仅推荐用于测试演示环境)
     JWT_SECRET: string;
     ENCRYPTION_KEY: string;
 };

@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { setCookie, deleteCookie } from 'hono/cookie';
+import { setCookie, getCookie, deleteCookie } from 'hono/cookie';
 import { EnvBindings, AppError } from '@/app/config';
 import { authMiddleware } from '@/shared/middleware/auth';
 import { getAvailableProviders } from '@/features/auth/providers/index';
@@ -33,6 +33,16 @@ auth.get('/authorize/:provider', async (c) => {
     // 生成包含唯一 state 防御 CSRF 的跳转地址
     const authData = await service.generateAuthorizeUrl(providerName);
 
+    // 将 state 存入服务端的 HttpOnly Cookie，有效期 10 分钟
+    const stateCookieName = `oauth_state_${providerName}`;
+    setCookie(c, stateCookieName, authData.state, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Lax', // 允许从第三方回调跳回时携带
+        maxAge: 10 * 60, // 10分钟有效期
+        path: '/',
+    });
+
     return c.json({
         success: true,
         authUrl: authData.url,
@@ -45,6 +55,20 @@ auth.get('/authorize/:provider', async (c) => {
 auth.post('/callback/:provider', async (c) => {
     const providerName = c.req.param('provider');
     const body = await c.req.json();
+
+    // --- State 闭环校验开始 ---
+    const stateCookieName = `oauth_state_${providerName}`;
+    const serverState = getCookie(c, stateCookieName);
+    const clientState = body.state; // 前端传回的回调 state 参数
+
+    if (!serverState || !clientState || serverState !== clientState) {
+        throw new AppError('Invalid or missing OAuth state. Security validation failed.', 403);
+    }
+
+    // 校验通过，清理一次性 State Cookie
+    deleteCookie(c, stateCookieName, { path: '/', secure: true, sameSite: 'Lax' });
+    // --- State 闭环校验结束 ---
+
     const service = getService(c);
 
     // 调用 Service 层处理登录
