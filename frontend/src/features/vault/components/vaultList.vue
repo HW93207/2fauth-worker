@@ -16,12 +16,19 @@
     <!-- 3. 数据列表 (已解锁) -->
     <div v-else class="vault-content">
       <div class="toolbar" style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-        <el-input 
-          v-model="searchQuery" 
-          placeholder="🔍 搜索服务名称、账号或分类..." 
-          clearable 
-          style="max-width: 400px; flex: 1;" 
-        />
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+          <el-input 
+            v-model="searchQuery" 
+            placeholder="搜索服务名称、账号或分类..." 
+            clearable 
+            style="max-width: 400px;" 
+          >
+            <template #prefix>
+              <el-icon v-if="isFetching && searchQuery" class="is-loading"><Loading /></el-icon>
+              <el-icon v-else><Search /></el-icon>
+            </template>
+          </el-input>
+        </div>
         
         <div class="batch-actions" style="display: flex; align-items: center; gap: 10px;">
           <template v-if="selectedIds.length > 0">
@@ -165,7 +172,7 @@
 <script setup>
 import { ref, shallowRef, onMounted, onUnmounted, watch, computed, defineAsyncComponent, nextTick, triggerRef } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { MoreFilled, Edit, Delete, Picture, View, Hide, CopyDocument, Loading } from '@element-plus/icons-vue'
+import { MoreFilled, Edit, Delete, Picture, View, Hide, CopyDocument, Loading, Search } from '@element-plus/icons-vue'
 import QRCode from 'qrcode'
 import { request } from '@/shared/utils/request'
 import { useLayoutStore } from '@/shared/stores/layoutStore'
@@ -199,7 +206,6 @@ const showSecret = ref(false)
 const qrCodeUrl = ref('')
 
 let globalTimer = null
-let loadingMessageHandle = null
 
 // --- 定时更新 (提升定义顺序) ---
 // 更新倒计时与验证码
@@ -251,54 +257,20 @@ const updateVaultStatus = async (targetList) => {
 // --- 工具函数 ---
 let searchTimer = null
 
-// --- Loading 提示控制 ---
-const showTopLoading = () => {
-  // 仅在已解锁状态下显示 Loading
-  if (!vaultStore.isUnlocked) return
-  // 防抖：如果已经在显示或正在等待显示，则不重复触发
-  if (loadingMessageHandle || loadingTimer) return
-
-  loadingMessageHandle = ElMessage({
-    message: '数据正在加载...',
-    icon: Loading,
-    duration: 0, // 设为 0 则不会自动关闭
-    type: 'info',
-    grouping: true
-  })
-}
-
-let loadingTimer = null
-const hideTopLoading = () => {
-  if (loadingTimer) clearTimeout(loadingTimer) // 清除等待中的 Loading
-  loadingTimer = null
-  if (loadingMessageHandle) {
-    loadingMessageHandle.close()
-    loadingMessageHandle = null
-  }
-}
-
 // --- Vue Query 集成 ---
 
 // 1. 定义数据获取函数
 const fetchVaultPage = async ({ pageParam = 1 }) => {
-  // 如果未解锁，直接返回空（理论上 enabled 会控制不执行，但做个兜底）
+  // 如果未解锁，直接返回空
   if (!vaultStore.isUnlocked) return { vault: [], pagination: { totalPages: 0 } }
 
-  // 如果是第一页且没有搜索，显示顶部 Loading
-  if (pageParam === 1 && !searchQuery.value) showTopLoading()
-
-    const query = new URLSearchParams({
+  const query = new URLSearchParams({
     page: pageParam,
     limit: pageSize.value,
-      search: searchQuery.value
-    }).toString()
+    search: searchQuery.value
+  }).toString()
     
-    const data = await request(`/api/vault?${query}`)
-  
-  // 隐藏 Loading (仅第一页)
-  if (pageParam === 1) hideTopLoading()
-  
-  return data
+  return await request(`/api/vault?${query}`)
 }
 
 // 2. 使用 useInfiniteQuery
@@ -403,8 +375,7 @@ defineExpose({
 })
 
 watch(searchQuery, () => {
-  // Vue Query 会自动处理，这里只需要处理 Loading UI
-  if (searchQuery.value) showTopLoading()
+  // Vue Query 会自动处理列表更新
 })
 
 // 批量选择
@@ -528,6 +499,5 @@ onMounted(() => {
 onUnmounted(() => {
   if (globalTimer) clearInterval(globalTimer)
   if (searchTimer) clearTimeout(searchTimer)
-  hideTopLoading()
 })
 </script>

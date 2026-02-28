@@ -22,6 +22,16 @@ export async function request(url, options = {}) {
         headers['X-CSRF-Token'] = csrfToken;
     }
 
+    // --- 离线拦截逻辑 ---
+    // 拦截破坏性/写操作，在无网络时提供温和提示并短路执行
+    const method = (options.method || 'GET').toUpperCase();
+    if (!navigator.onLine && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+        if (!options.silent) {
+            ElMessage.warning('当前处于离线模式，无法进行此操作');
+        }
+        throw new Error('Offline: Cannot perform mutative action');
+    }
+
     try {
         const response = await fetch(url, { ...options, headers, credentials: 'include' })
 
