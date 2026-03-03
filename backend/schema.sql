@@ -31,8 +31,10 @@ CREATE TABLE IF NOT EXISTS backup_providers (
 );
 
 -- 索引
-CREATE INDEX IF NOT EXISTS idx_vault_service ON vault(service);
+DROP INDEX IF EXISTS idx_vault_service;
 CREATE INDEX IF NOT EXISTS idx_vault_created_at ON vault(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_backup_providers_type ON backup_providers(type);
+CREATE INDEX IF NOT EXISTS idx_vault_service_created_at ON vault(service, created_at DESC);
 
 -- Remove any existing duplicates before enforcing unique constraint; keep the earliest
 DELETE FROM vault
