@@ -28,12 +28,13 @@ export function useVaultList(afterLoadRef = null) {
     const pageSize = ref(12)
 
     // --- Vue Query 分页逻辑 ---
-    const fetchVaultPage = async ({ pageParam = 1 }) => {
+    const fetchVaultPage = async ({ pageParam = 1, queryKey }) => {
         if (!vaultStore.isUnlocked) return { vault: [], pagination: { totalPages: 0 } }
         return await vaultService.getVault({
             page: pageParam,
             limit: pageSize.value,
-            search: searchQuery.value
+            // queryKey[1] is the search string for THIS query's cache key, provided by Vue Query
+            search: (queryKey && queryKey.length > 1) ? queryKey[1] : searchQuery.value
         })
     }
 
@@ -70,11 +71,11 @@ export function useVaultList(afterLoadRef = null) {
             const existing = vault.value.find(a => a.id === newAcc.id)
             if (existing) {
                 // 检测关键参数变化：digits, secret, algorithm
-                const hasParameterChange = 
+                const hasParameterChange =
                     existing.digits !== newAcc.digits ||
                     existing.secret !== newAcc.secret ||
                     existing.algorithm !== newAcc.algorithm
-                
+
                 // 若参数变化，强制清空验证码以触发重新计算
                 if (hasParameterChange) {
                     return {
@@ -84,7 +85,7 @@ export function useVaultList(afterLoadRef = null) {
                         forceCompute: true      // 标记为需要优先计算
                     }
                 }
-                
+
                 return { ...existing, ...newAcc }  // 保留 currentCode / remaining 等动态字段
             }
             return {

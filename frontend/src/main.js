@@ -24,21 +24,22 @@ const themeStore = useThemeStore()
 themeStore.initTheme()
 
 // PWA Service Worker 注册
-registerSW({
-  onOfflineReady() {
+const updateSW = registerSW({
+  onofflineReady() { },
+  onNeedRefresh() {
     import('element-plus').then(({ ElNotification }) => {
       ElNotification({
-        title: i18n.global.t('common.update_available'),
+        title: i18n.global.t('common.update_available') || 'Update Available',
         message: `
           <div style="line-height: 1.5; font-size: 14px; margin-bottom: 5px;">
-            🎉 ${i18n.global.t('common.pwa_update_ready')}
+            🎉 ${i18n.global.t('common.pwa_update_ready') || 'A new version is ready!'}
           </div>
           <div>
             <button 
               style="background: var(--el-color-primary); color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;"
-              onclick="window.location.reload()"
+              id="pwa-refresh-btn"
             >
-              ${i18n.global.t('common.refresh_now')}
+              ${i18n.global.t('common.refresh_now') || 'Refresh Now'}
             </button>
           </div>
         `,
@@ -46,6 +47,10 @@ registerSW({
         type: 'success',
         duration: 0
       })
+      setTimeout(() => {
+        const btn = document.getElementById('pwa-refresh-btn')
+        if (btn) btn.onclick = () => updateSW(true)
+      }, 100)
     })
   },
 })

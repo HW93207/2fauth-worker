@@ -1,8 +1,8 @@
 <template>
   <div class="vault-list-wrapper" style="min-height: 400px;">
     <div class="vault-content">
-      <!-- 移动端偏移 45px (Header2), PC端偏移 61px (Header1) -->
-      <el-affix :offset="layoutStore.isMobile ? 45 : 61" @change="(val) => isToolbarFixed = val">
+      <!-- 移动端偏移 0px (Header2), PC端偏移 61px (Header1) -->
+      <el-affix :offset="layoutStore.isMobile ? 0 : 61" @change="(val) => isToolbarFixed = val">
         <div class="toolbar" :class="{ 'is-affixed': isToolbarFixed }" style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
           <el-input 
@@ -272,10 +272,8 @@ onMounted(handleUnlocked)
     left: 0 !important;
     right: 0 !important;
     width: 100vw !important;
-    background-color: var(--glass-card-bg, rgba(255, 255, 255, 0.95));
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--el-border-color-light);
-    padding: 10px 20px !important;
+    background-color: var(--el-bg-color-page);
+    padding: 14px 28px 14px 20px !important;
     border-radius: 0 !important;
   }
 }
@@ -283,17 +281,9 @@ onMounted(handleUnlocked)
 /* PC 端吸顶效果：保持原有宽度，无背景色和下边框 */
 @media (min-width: 768px) {
   .toolbar.is-affixed {
-    background-color: var(--el-bg-color-page) !important;
+    background-color: var(--el-bg-color) !important;
     border-bottom: none !important;
     padding: 10px 0px 20px 0px !important;
-  }
-}
-
-/* 适配暗黑模式 (仅移动端需要背景) */
-@media (max-width: 767px) {
-  html.dark .toolbar.is-affixed {
-    background-color: rgba(30, 30, 30, 0.85);
-    border-bottom: 1px solid var(--el-border-color-dark);
   }
 }
 </style>

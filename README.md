@@ -46,7 +46,7 @@
 - 🛡️ **TOTP 密钥分析与生成工具**
 
 ### 🔄 企业级数据灾备
-- **WebDAV / S3 自动备份**：连接你的Nextcloud、阿里云 OSS 或 AWS S3。
+- **WebDAV / S3 / Telegram 自动备份**：连接你的Nextcloud、阿里云 OSS 或 AWS S3，或者 Telegram Bot。
 - 自动化定时任务（Cron Triggers）实现无感数据双重灾备。
 
 ---

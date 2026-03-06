@@ -143,17 +143,37 @@ export const backupService = {
      * 下载加密的备份文件
      * @param {string} id
      * @param {string} filename
+     * @param {boolean} silent
      * @returns {Promise<{success: boolean, content: string|Object}>}
      * @throws {backupError}
      */
-    async downloadBackupFile(id, filename) {
+    async downloadBackupFile(id, filename, silent = false) {
         try {
             return await request(`/api/backups/providers/${id}/download`, {
+                method: 'POST',
+                body: JSON.stringify({ filename }),
+                silent
+            })
+        } catch (e) {
+            throw new backupError('Failed to download backup file', 'FILE_DOWNLOAD_FAILED', e)
+        }
+    },
+
+    /**
+     * 删除云端备份文件（如遇到幽灵记录）
+     * @param {string} id
+     * @param {string} filename
+     * @returns {Promise<{success: boolean}>}
+     * @throws {backupError}
+     */
+    async deleteBackupFile(id, filename) {
+        try {
+            return await request(`/api/backups/providers/${id}/files/delete`, {
                 method: 'POST',
                 body: JSON.stringify({ filename })
             })
         } catch (e) {
-            throw new backupError('Failed to download backup file', 'FILE_DOWNLOAD_FAILED', e)
+            throw new backupError('Failed to delete backup file', 'FILE_DELETE_FAILED', e)
         }
     }
 }

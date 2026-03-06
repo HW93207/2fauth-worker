@@ -68,6 +68,7 @@
           <el-select v-model="form.type" :disabled="isEditing">
             <el-option label="WebDAV" value="webdav" />
             <el-option :label="$t('backup.type_s3')" value="s3" />
+            <el-option label="Telegram" value="telegram" />
           </el-select>
         </el-form-item>
         <el-form-item :label="$t('backup.name_label')">
@@ -90,7 +91,7 @@
             <el-input v-else v-model="form.config.password" type="password" show-password />
           </el-form-item>
           <el-form-item :label="$t('backup.save_dir')">
-            <el-input v-model="form.config.saveDir" placeholder="/2fauth-backups" />
+            <el-input v-model="form.config.saveDir" placeholder="/2fauth-worker-backup" />
           </el-form-item>
         </template>
 
@@ -116,10 +117,28 @@
             <el-input v-else v-model="form.config.secretAccessKey" type="password" show-password />
           </el-form-item>
           <el-form-item :label="$t('backup.s3_path_prefix')">
-            <el-input v-model="form.config.saveDir" placeholder="backups/" />
+            <el-input v-model="form.config.saveDir" placeholder="/2fauth-worker-backup" />
           </el-form-item>
         </template>
 
+        <!-- Telegram 配置 -->
+        <template v-if="form.type === 'telegram'">
+          <el-form-item :label="$t('backup.telegram_bot_token')">
+            <div v-if="isEditing && !isEditingTelegramToken" style="display: flex; align-items: center; justify-content: space-between; background-color: var(--el-fill-color-light); padding: 0 15px; border-radius: 4px; border: 1px solid var(--el-border-color); width: 100%; height: 32px;">
+              <span style="font-family: monospace; letter-spacing: 2px;">******</span>
+              <el-button link type="primary" @click="isEditingTelegramToken = true; form.config.botToken = ''">{{ $t('backup.modify') }}</el-button>
+            </div>
+            <el-input v-else v-model="form.config.botToken" type="password" show-password :placeholder="$t('backup.telegram_bot_token_placeholder')" />
+          </el-form-item>
+          <el-form-item :label="$t('backup.telegram_chat_id')">
+            <el-input v-model="form.config.chatId" :placeholder="$t('backup.telegram_chat_id_placeholder')" />
+            <div class="form-tip">
+              <strong>{{ $t('backup.telegram_chat_id_tip_title') }}</strong><br/>
+              <span>{{ $t('backup.telegram_chat_id_tip_1') }}</span><br/>
+              <span>{{ $t('backup.telegram_chat_id_tip_2') }}</span>
+            </div>
+          </el-form-item>
+        </template>
         <el-divider content-position="left">{{ $t('backup.auto_backup_config') }}</el-divider>
         <el-form-item :label="$t('backup.auto_backup')">
           <el-switch v-model="form.autoBackup" :active-text="$t('backup.switch_on')" :inactive-text="$t('backup.switch_off')" />
@@ -211,7 +230,7 @@ const layoutStore = useLayoutStore()
 
 const {
   providers, isLoading, showConfigDialog, isEditing, isTesting, isSaving, 
-  isEditingWebdavPwd, isEditingS3Secret, form,
+  isEditingWebdavPwd, isEditingS3Secret, isEditingTelegramToken, form,
   hasExistingAutoPwd, configUseExistingAutoPwd, fetchProviders, openAddDialog,
   editProvider, testConnection, saveProvider, deleteProvider
 } = useBackupProviders()
@@ -223,7 +242,7 @@ const {
   selectRestoreFile, handleRestore
 } = useBackupActions(emit, fetchProviders)
 
-const getProviderTypeTag = (type) => type === 'webdav' ? 'primary' : (type === 's3' ? 'warning' : 'info')
+const getProviderTypeTag = (type) => type === 'webdav' ? 'primary' : (type === 's3' ? 'warning' : (type === 'telegram' ? 'success' : 'info'))
 
 const formatSize = (bytes) => {
   if (!bytes) return '0 B'

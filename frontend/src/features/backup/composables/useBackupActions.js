@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { ElMessage, ElNotification } from 'element-plus'
+import { ElMessage, ElNotification, ElMessageBox } from 'element-plus'
 import { backupService } from '@/features/backup/service/backupService'
 import { dataMigrationService } from '@/features/migration/service/dataMigrationService'
 import { useVaultStore } from '@/features/vault/store/vaultStore'
@@ -55,7 +55,7 @@ export function useBackupActions(emit, fetchProviders) {
                 if (fetchProviders) await fetchProviders()
             }
         } catch (e) {
-            ElMessage.error(e.message || '备份失败')
+            // Already handled by request.js
         } finally { isBackingUp.value = false }
     }
 
@@ -68,7 +68,7 @@ export function useBackupActions(emit, fetchProviders) {
             const res = await backupService.getBackupFiles(provider.id)
             if (res.success) backupFiles.value = res.files
         } catch (e) {
-            ElMessage.error(e.message || t('backup.fetch_backup_fail'))
+            // Error handled by request.js
         } finally { isLoadingFiles.value = false }
     }
 
@@ -81,7 +81,7 @@ export function useBackupActions(emit, fetchProviders) {
     const handleRestore = async () => {
         isRestoring.value = true
         try {
-            const downloadRes = await backupService.downloadBackupFile(currentActionProvider.value.id, selectedFile.value.filename)
+            const downloadRes = await backupService.downloadBackupFile(currentActionProvider.value.id, selectedFile.value.filename, true)
 
             let contentToDecrypt = downloadRes.content
             try {
@@ -119,7 +119,34 @@ export function useBackupActions(emit, fetchProviders) {
                 }
             }
         } catch (e) {
-            ElMessage.error(e.message || t('backup.restore_fail'))
+            // Check if the backend told us the file was unavailable/deleted on Telegram
+            if (e.message?.includes('FILE_UNAVAILABLE')) {
+                // Close the password prompt, but keep the restore list dialog open
+                showRestoreConfirmDialog.value = false
+
+                ElMessageBox.confirm(
+                    t('backup.file_unavailable'),
+                    t('backup.record_invalid'),
+                    {
+                        confirmButtonText: t('backup.confirm_clean'),
+                        cancelButtonText: t('backup.cancel_clean'),
+                        type: 'warning'
+                    }
+                ).then(async () => {
+                    try {
+                        await backupService.deleteBackupFile(currentActionProvider.value.id, selectedFile.value.filename)
+                        if (selectedFile.value) {
+                            backupFiles.value = backupFiles.value.filter(f => f.filename !== selectedFile.value.filename)
+                        }
+                        ElMessage.success(t('backup.clean_record_success'))
+                    } catch (err) {
+                        ElMessage.error(err.message || t('backup.clean_record_fail'))
+                    }
+                }).catch(() => { })
+            } else if (!e.message?.includes('connection_failed')) {
+                // Keep local toast for decryption errors that don't originate from fetch
+                ElMessage.error(e.message || t('backup.restore_fail'))
+            }
         } finally { isRestoring.value = false }
     }
 

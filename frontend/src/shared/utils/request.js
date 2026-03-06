@@ -85,6 +85,12 @@ export async function request(url, options = {}) {
                     : fallbackMessage
 
                 if (errorDetails) {
+                    let detailParts = errorDetails.split(':')
+                    let detailKey = detailParts[0].trim()
+                    if (i18n.global.te(`api_errors.${detailKey}`)) {
+                        detailParts[0] = i18n.global.t(`api_errors.${detailKey}`)
+                        errorDetails = detailParts.join(': ')
+                    }
                     translatedMessage = `${translatedMessage}: ${errorDetails}`
                 }
 
@@ -134,6 +140,12 @@ export async function request(url, options = {}) {
                     : fallbackError
 
                 if (errorDetails) {
+                    let detailParts = errorDetails.split(':')
+                    let detailKey = detailParts[0].trim()
+                    if (i18n.global.te(`api_errors.${detailKey}`)) {
+                        detailParts[0] = i18n.global.t(`api_errors.${detailKey}`)
+                        errorDetails = detailParts.join(': ')
+                    }
                     translatedError = `${translatedError}: ${errorDetails}`
                 }
                 ElMessage.error(translatedError)
@@ -152,6 +164,12 @@ export async function request(url, options = {}) {
         // 屏蔽被 silent 处理过的 Auth Error
         if (error.message !== 'Unauthorized/Forbidden' && !options.silent) {
             console.error('API Request Error:', error)
+
+            // Only show toast if it wasn't already shown in the !response.ok block above
+            // The throwing logic above throws an Error with a specific format, we only toast here if it's a fetch/network level error
+            if (error.name === 'TypeError' || error.message.includes('fetch')) {
+                ElMessage.error(i18n.global.te('api_errors.network_error') ? i18n.global.t('api_errors.network_error') : '网络请求失败')
+            }
         }
         throw error
     }

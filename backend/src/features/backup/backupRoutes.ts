@@ -65,6 +65,14 @@ backups.post('/providers/:id/download', async (c) => {
     return c.json({ success: true, content });
 });
 
+backups.post('/providers/:id/files/delete', async (c) => {
+    const service = new BackupService(c.env);
+    const id = Number(c.req.param('id'));
+    const { filename } = await c.req.json();
+    await service.deleteFile(id, filename);
+    return c.json({ success: true });
+});
+
 export async function handleScheduledBackup(env: EnvBindings) {
     const service = new BackupService(env);
     await service.handleScheduledBackup();

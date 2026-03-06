@@ -8,7 +8,7 @@ export class WebDavProvider implements BackupProvider {
 
     constructor(config: any) {
         if (!config.url || !config.username || !config.password) {
-            throw new Error('WebDAV configuration incomplete');
+            throw new Error('webdav_config_incomplete');
         }
         this.config = config;
         this.client = createClient(config.url, {
@@ -101,7 +101,7 @@ export class WebDavProvider implements BackupProvider {
 
             if (!res.ok) {
                 const errText = await res.text().catch(() => '');
-                throw new Error(`WebDAV Fallback Upload Failed: ${res.status} ${res.statusText} ${errText}`);
+                throw new Error(`webdav_upload_failed: ${res.status} ${res.statusText} ${errText}`);
             }
         }
     }
@@ -129,11 +129,11 @@ export class WebDavProvider implements BackupProvider {
                 if (redirectUrl) {
                     // 由于跨域重定向规范限制，直接抓取 location 发出裸请求（通常是带有签名的 CDN 下载直链，已无需附带 Authorization）
                     const finalRes = await fetch(redirectUrl);
-                    if (!finalRes.ok) throw new Error(`Redirect fetch failed: ${finalRes.status}`);
+                    if (!finalRes.ok) throw new Error(`webdav_download_redirect_failed: ${finalRes.status}`);
                     return await finalRes.text();
                 }
             } else if (!res.ok) {
-                throw new Error(`WebDAV Fallback Download Failed: ${res.status} ${res.statusText}`);
+                throw new Error(`webdav_download_failed: ${res.status} ${res.statusText}`);
             }
 
             return await res.text();
@@ -153,7 +153,7 @@ export class WebDavProvider implements BackupProvider {
                 method: 'DELETE',
                 headers: { 'Authorization': this.getAuthHeader() }
             });
-            if (!res.ok) throw new Error(`WebDAV Fallback Delete Failed: ${res.status} ${res.statusText}`);
+            if (!res.ok) throw new Error(`webdav_delete_failed: ${res.status} ${res.statusText}`);
         }
     }
 }

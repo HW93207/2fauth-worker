@@ -2,7 +2,7 @@ import { eq, desc } from 'drizzle-orm';
 import { EnvBindings, AppError } from '@/app/config';
 import { BackupRepository } from '@/shared/db/repositories/backupRepository';
 import { encryptData, decryptData, encryptBackupFile } from '@/shared/utils/crypto';
-import { BackupProvider, WebDavProvider, S3Provider } from '@/features/backup/providers';
+import { BackupProvider, WebDavProvider, S3Provider, TelegramProvider } from '@/features/backup/providers';
 import { createDb, decryptField } from '@/shared/db/db';
 import { vault as vaultTable, backupProviders } from '@/shared/db/schema';
 
@@ -17,12 +17,14 @@ export class BackupService {
         this.repository = new BackupRepository(env.DB);
     }
 
-    private async getProvider(type: string, config: any): Promise<BackupProvider> {
+    private async getProvider(type: string, config: any, id?: number): Promise<BackupProvider> {
         switch (type) {
             case 'webdav':
                 return new WebDavProvider(config);
             case 's3':
                 return new S3Provider(config);
+            case 'telegram':
+                return new TelegramProvider(config, this.db, id);
             default:
                 throw new AppError('provider_not_found', 400);
         }
@@ -36,6 +38,9 @@ export class BackupService {
         if (type === 's3' && processed.secretAccessKey) {
             processed.secretAccessKey = await encryptData(processed.secretAccessKey, key);
         }
+        if (type === 'telegram' && processed.botToken) {
+            processed.botToken = await encryptData(processed.botToken, key);
+        }
         return JSON.stringify(processed);
     }
 
@@ -46,6 +51,9 @@ export class BackupService {
         }
         if (type === 's3' && config.secretAccessKey) {
             config.secretAccessKey = await decryptData(config.secretAccessKey, key);
+        }
+        if (type === 'telegram' && config.botToken) {
+            config.botToken = await decryptData(config.botToken, key);
         }
         return config;
     }
@@ -63,6 +71,9 @@ export class BackupService {
             }
             if (row.type === 's3' && config.secretAccessKey) {
                 config.secretAccessKey = MASK;
+            }
+            if (row.type === 'telegram' && config.botToken) {
+                config.botToken = MASK;
             }
 
             return {
@@ -118,6 +129,9 @@ export class BackupService {
             if (type === 's3' && (config.secretAccessKey === MASK || !config.secretAccessKey)) {
                 config.secretAccessKey = currentConfigBase.secretAccessKey;
             }
+            if (type === 'telegram' && (config.botToken === MASK || !config.botToken)) {
+                config.botToken = currentConfigBase.botToken;
+            }
         }
 
         const encryptedConfig = await this.processConfigForStorage(type, config, key);
@@ -160,11 +174,14 @@ export class BackupService {
                 if (type === 's3' && config.secretAccessKey === MASK) {
                     config.secretAccessKey = currentConfigBase.secretAccessKey;
                 }
+                if (type === 'telegram' && config.botToken === MASK) {
+                    config.botToken = currentConfigBase.botToken;
+                }
             }
         }
 
         try {
-            const provider = await this.getProvider(type, config);
+            const provider = await this.getProvider(type, config, id);
             await provider.testConnection();
         } catch (e: any) {
             throw new AppError(`connection_failed: ${e.message}`, 400);
@@ -230,7 +247,7 @@ export class BackupService {
         if (!providerRow) throw new AppError('provider_not_found', 404);
 
         const configObj = await this.processConfigForUsage(providerRow.type, providerRow.config, key);
-        const provider = await this.getProvider(providerRow.type, configObj);
+        const provider = await this.getProvider(providerRow.type, configObj, providerRow.id);
 
         try {
             await provider.uploadBackup(finalFilename, finalContent);
@@ -250,7 +267,7 @@ export class BackupService {
 
         const key = this.env.ENCRYPTION_KEY || this.env.JWT_SECRET;
         const config = await this.processConfigForUsage(providerRow.type, providerRow.config, key);
-        const provider = await this.getProvider(providerRow.type, config);
+        const provider = await this.getProvider(providerRow.type, config, providerRow.id);
 
         return await provider.listBackups();
     }
@@ -263,12 +280,29 @@ export class BackupService {
 
         const key = this.env.ENCRYPTION_KEY || this.env.JWT_SECRET;
         const config = await this.processConfigForUsage(providerRow.type, providerRow.config, key);
-        const provider = await this.getProvider(providerRow.type, config);
+        const provider = await this.getProvider(providerRow.type, config, providerRow.id);
 
         try {
             return await provider.downloadBackup(filename);
         } catch (e: any) {
             throw new AppError(`download_failed: ${e.message}`, 500);
+        }
+    }
+
+    async deleteFile(id: number, filename: string) {
+        if (!filename) throw new AppError('filename_required', 400);
+
+        const providerRow = await this.db.select().from(backupProviders).where(eq(backupProviders.id, id)).get();
+        if (!providerRow) throw new AppError('provider_not_found', 404);
+
+        const key = this.env.ENCRYPTION_KEY || this.env.JWT_SECRET;
+        const config = await this.processConfigForUsage(providerRow.type, providerRow.config, key);
+        const provider = await this.getProvider(providerRow.type, config, providerRow.id);
+
+        try {
+            await provider.deleteBackup(filename);
+        } catch (e: any) {
+            throw new AppError(`delete_failed: ${e.message}`, 500);
         }
     }
 
@@ -315,7 +349,7 @@ export class BackupService {
                 const fileContent = JSON.stringify({ ...exportPayload, data: userEncrypted, accounts: undefined });
 
                 const config = await this.processConfigForUsage(row.type as string, row.config as string, key);
-                const provider = await this.getProvider(row.type as string, config);
+                const provider = await this.getProvider(row.type as string, config, row.id);
 
                 await provider.uploadBackup(filename, fileContent);
 

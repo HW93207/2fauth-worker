@@ -9,7 +9,7 @@ export class S3Provider implements BackupProvider {
 
     constructor(config: any) {
         if (!config.endpoint || !config.accessKeyId || !config.secretAccessKey || !config.bucket) {
-            throw new Error('S3 configuration incomplete');
+            throw new Error('s3_config_incomplete');
         }
 
         this.client = new AwsClient({
@@ -42,7 +42,7 @@ export class S3Provider implements BackupProvider {
         const url = this.getUrl('', { 'list-type': '2', 'max-keys': '1' });
         const res = await this.client.fetch(url);
         if (!res.ok) {
-            throw new Error(`S3 Error: ${res.status} ${res.statusText}`);
+            throw new Error(`s3_api_error: ${res.status} ${res.statusText}`);
         }
         return true;
     }
@@ -50,7 +50,7 @@ export class S3Provider implements BackupProvider {
     async listBackups(): Promise<BackupFile[]> {
         const url = this.getUrl('', { 'list-type': '2', 'prefix': this.prefix });
         const res = await this.client.fetch(url);
-        if (!res.ok) throw new Error(`Failed to list S3 objects: ${res.status}`);
+        if (!res.ok) throw new Error(`s3_list_failed: ${res.status}`);
 
         const text = await res.text();
 
@@ -89,14 +89,14 @@ export class S3Provider implements BackupProvider {
             headers: { 'Content-Type': 'application/json' }
         });
 
-        if (!res.ok) throw new Error(`S3 Upload Failed: ${res.status}`);
+        if (!res.ok) throw new Error(`s3_upload_failed: ${res.status}`);
     }
 
     async downloadBackup(filename: string): Promise<string> {
         const key = this.prefix + filename;
         const url = this.getUrl(key);
         const res = await this.client.fetch(url);
-        if (!res.ok) throw new Error(`S3 Download Failed: ${res.status}`);
+        if (!res.ok) throw new Error(`s3_download_failed: ${res.status}`);
         return await res.text();
     }
 
@@ -106,6 +106,6 @@ export class S3Provider implements BackupProvider {
         const res = await this.client.fetch(url, {
             method: 'DELETE'
         });
-        if (!res.ok) throw new Error(`S3 Delete Failed: ${res.status}`);
+        if (!res.ok) throw new Error(`s3_delete_failed: ${res.status}`);
     }
 }

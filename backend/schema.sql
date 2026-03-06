@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS vault (
 -- 云端备份源配置表
 CREATE TABLE IF NOT EXISTS backup_providers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT NOT NULL,            -- 类型: 'webdav', 's3'
+    type TEXT NOT NULL,            -- 类型: 'webdav', 's3', 'telegram'
     name TEXT NOT NULL,            -- 显示名称
     is_enabled BOOLEAN DEFAULT 1,  -- 启用状态
     config TEXT NOT NULL,          -- 配置 JSON (敏感字段加密)
@@ -30,11 +30,23 @@ CREATE TABLE IF NOT EXISTS backup_providers (
     updated_at INTEGER
 );
 
+-- Telegram 备份历史记录表
+CREATE TABLE IF NOT EXISTS backup_telegram_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    file_id TEXT NOT NULL,
+    message_id INTEGER NOT NULL,
+    size INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
 -- 索引
 DROP INDEX IF EXISTS idx_vault_service;
 CREATE INDEX IF NOT EXISTS idx_vault_created_at ON vault(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_backup_providers_type ON backup_providers(type);
 CREATE INDEX IF NOT EXISTS idx_vault_service_created_at ON vault(service, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_backup_telegram_history_provider_id ON backup_telegram_history(provider_id, created_at DESC);
 
 -- Remove any existing duplicates before enforcing unique constraint; keep the earliest
 DELETE FROM vault

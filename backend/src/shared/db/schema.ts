@@ -34,8 +34,21 @@ export const backupProviders = sqliteTable('backup_providers', {
   updatedAt: integer('updated_at').notNull(),
 });
 
+// 3. Telegram 备份历史记录表
+export const backupTelegramHistory = sqliteTable('backup_telegram_history', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  providerId: integer('provider_id').notNull(),
+  filename: text('filename').notNull(),
+  fileId: text('file_id').notNull(),
+  messageId: integer('message_id').notNull(),
+  size: integer('size').notNull(),
+  createdAt: integer('created_at').notNull(),
+});
+
 // 导出类型定义
 export type VaultItem = typeof vault.$inferSelect;
 export type NewVaultItem = typeof vault.$inferInsert;
 export type BackupProvider = typeof backupProviders.$inferSelect;
 export type NewBackupProvider = typeof backupProviders.$inferInsert;
+export type BackupTelegramHistory = typeof backupTelegramHistory.$inferSelect;
+export type NewBackupTelegramHistory = typeof backupTelegramHistory.$inferInsert;

@@ -18,11 +18,12 @@ export function useBackupProviders() {
     const isSaving = ref(false)
     const isEditingWebdavPwd = ref(false)
     const isEditingS3Secret = ref(false)
+    const isEditingTelegramToken = ref(false)
 
     const initialFormState = () => ({
         type: 'webdav',
         name: '',
-        config: { url: '', username: '', password: '', saveDir: '/', endpoint: '', bucket: '', region: 'auto', accessKeyId: '', secretAccessKey: '' },
+        config: { url: '', username: '', password: '', saveDir: '/2fauth-worker-backup', endpoint: '', bucket: '', region: 'auto', accessKeyId: '', secretAccessKey: '', botToken: '', chatId: '' },
         autoBackup: false,
         autoBackupPassword: '',
         autoBackupRetain: 30
@@ -55,6 +56,7 @@ export function useBackupProviders() {
         isEditing.value = false
         isEditingWebdavPwd.value = false
         isEditingS3Secret.value = false
+        isEditingTelegramToken.value = false
         form.value = initialFormState()
         hasExistingAutoPwd.value = false
         configUseExistingAutoPwd.value = false
@@ -65,6 +67,7 @@ export function useBackupProviders() {
         isEditing.value = true
         isEditingWebdavPwd.value = false
         isEditingS3Secret.value = false
+        isEditingTelegramToken.value = false
         currentProviderId.value = provider.id
         form.value = JSON.parse(JSON.stringify({
             type: provider.type,
@@ -91,6 +94,9 @@ export function useBackupProviders() {
             if (!c.bucket) return t('backup.require_bucket')
             if (!c.accessKeyId) return t('backup.require_access_key')
             if (!c.secretAccessKey) return t('backup.require_secret_key')
+        } else if (form.value.type === 'telegram') {
+            if (!c.botToken) return t('backup.require_telegram_token')
+            if (!c.chatId) return t('backup.require_telegram_chat_id')
         }
 
         if (form.value.autoBackup) {
@@ -117,7 +123,7 @@ export function useBackupProviders() {
             )
             if (res.success) ElMessage.success('连接成功')
         } catch (e) {
-            ElMessage.error(e.message || '连接失败')
+            // Already handled by request.js global error handler
         } finally { isTesting.value = false }
     }
 
@@ -140,7 +146,7 @@ export function useBackupProviders() {
                 await fetchProviders()
             }
         } catch (e) {
-            ElMessage.error(e.message || '保存失败')
+            // Already handled by request.js
         } finally { isSaving.value = false }
     }
 
@@ -150,9 +156,7 @@ export function useBackupProviders() {
             await backupService.deleteProvider(provider.id)
             await fetchProviders()
         } catch (e) {
-            if (e !== 'cancel') {
-                ElMessage.error(e.message || '删除失败')
-            }
+            // Error handled by request.js (unless it's 'cancel' from ElMessageBox)
         }
     }
 
@@ -167,6 +171,7 @@ export function useBackupProviders() {
         isSaving,
         isEditingWebdavPwd,
         isEditingS3Secret,
+        isEditingTelegramToken,
         form,
         hasExistingAutoPwd,
         configUseExistingAutoPwd,
