@@ -1,0 +1,7 @@
+{
+    "name": "2fauth-worker",
+    "private": true,
+    "scripts": {
+        "postinstall": "npm install --prefix backend && npm install --prefix frontend"
+    }
+}
