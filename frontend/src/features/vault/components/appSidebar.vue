@@ -39,6 +39,10 @@
       <el-menu-item index="tools">
         <el-icon><Tools /></el-icon><template #title><span>{{ $t('menu.tools') }}</span></template>
       </el-menu-item>
+
+      <el-menu-item index="security">
+        <el-icon><iconFingerprint /></el-icon><template #title><span>{{ $t('menu.security') }}</span></template>
+      </el-menu-item>
     </el-menu>
 
     <!-- 底部操作按钮 -->
@@ -113,6 +117,9 @@
         <el-menu-item index="tools">
           <el-icon><Tools /></el-icon><span>{{ $t('menu.tools') }}</span>
         </el-menu-item>
+        <el-menu-item index="security">
+          <el-icon><iconFingerprint /></el-icon><span>{{ $t('menu.security') }}</span>
+        </el-menu-item>
       </el-menu>
 
       <div class="sidebar-footer" style="display: flex; gap: 15px; justify-content: center; padding: 20px 0;">
@@ -135,6 +142,7 @@ import {
   Cloudy, Sunny, Moon, SwitchButton, Fold, Expand, Tools
 } from '@element-plus/icons-vue'
 import iconLocales from '@/shared/components/icons/iconLocales.vue'
+import iconFingerprint from '@/shared/components/icons/iconFingerprint.vue'
 import { useLayoutStore } from '@/shared/stores/layoutStore'
 import { useThemeStore } from '@/shared/stores/themeStore'
 import { useAuthUserStore } from '@/features/auth/store/authUserStore'

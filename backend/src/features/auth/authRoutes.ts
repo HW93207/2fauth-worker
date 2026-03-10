@@ -4,10 +4,12 @@ import { EnvBindings, AppError } from '@/app/config';
 import { authMiddleware } from '@/shared/middleware/auth';
 import { getAvailableProviders } from '@/features/auth/providers/index';
 import { AuthService } from '@/features/auth/authService';
+import { WebAuthnService } from '@/features/auth/webAuthnService';
 
 const auth = new Hono<{ Bindings: EnvBindings, Variables: { user: any } }>();
 
 const getService = (c: any) => new AuthService(c.env);
+const getWebAuthnService = (c: any) => new WebAuthnService(c.env, c.req.url);
 
 // 获取可用登录方式列表
 auth.get('/providers', (c) => {
@@ -124,6 +126,95 @@ auth.get('/me', authMiddleware, (c) => {
         success: true,
         userInfo: user
     });
+});
+
+// --- WebAuthn (Passkey) 核心接口 ---
+
+// 1. 获取注册选项 (需已登录)
+auth.get('/webauthn/register/options', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const service = getWebAuthnService(c);
+    const options = await service.generateRegistrationOptions(user.id, user.email);
+
+    // 存储 challenge 到 Cookie
+    setCookie(c, 'webauthn_registration_challenge', options.challenge, {
+        httpOnly: true, secure: true, sameSite: 'Lax', maxAge: 120, path: '/'
+    });
+
+    return c.json(options);
+});
+
+// 2. 验证注册响应 (需已登录)
+auth.post('/webauthn/register/verify', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const body = await c.req.json();
+    const expectedChallenge = getCookie(c, 'webauthn_registration_challenge');
+
+    if (!expectedChallenge) throw new AppError('webauthn_challenge_missing', 400);
+
+    const service = getWebAuthnService(c);
+    const { name } = body; // 前端传回的自定义别名
+    const result = await service.verifyRegistrationResponse(user.email, body.response, expectedChallenge, name);
+
+    deleteCookie(c, 'webauthn_registration_challenge', { path: '/' });
+    return c.json(result);
+});
+
+// 3. 获取登录选项 (公开)
+auth.get('/webauthn/login/options', async (c) => {
+    const service = getWebAuthnService(c);
+    const options = await service.generateAuthenticationOptions();
+
+    setCookie(c, 'webauthn_login_challenge', options.challenge, {
+        httpOnly: true, secure: true, sameSite: 'Lax', maxAge: 120, path: '/'
+    });
+
+    return c.json(options);
+});
+
+// 4. 验证登录响应 (公开)
+auth.post('/webauthn/login/verify', async (c) => {
+    const body = await c.req.json();
+    const expectedChallenge = getCookie(c, 'webauthn_login_challenge');
+
+    if (!expectedChallenge) throw new AppError('webauthn_challenge_missing', 400);
+
+    const service = getWebAuthnService(c);
+    const result = await service.verifyAuthenticationResponse(body, expectedChallenge);
+
+    // 登录成功，设置会话 Cookie (逻辑同 OAuth callback)
+    setCookie(c, 'auth_token', result.token, {
+        httpOnly: true, secure: true, sameSite: 'Strict', maxAge: 7 * 24 * 60 * 60, path: '/',
+    });
+
+    const csrfToken = crypto.randomUUID();
+    setCookie(c, 'csrf_token', csrfToken, {
+        httpOnly: false, secure: true, sameSite: 'Strict', maxAge: 7 * 24 * 60 * 60, path: '/',
+    });
+
+    deleteCookie(c, 'webauthn_login_challenge', { path: '/' });
+
+    return c.json({
+        success: true,
+        userInfo: result.userInfo
+    });
+});
+
+// 5. 获取凭证列表 (需已登录)
+auth.get('/webauthn/credentials', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const service = getWebAuthnService(c);
+    const credentials = await service.listCredentials(user.email);
+    return c.json({ success: true, credentials });
+});
+
+// 6. 删除凭证 (需已登录)
+auth.delete('/webauthn/credentials/:id', authMiddleware, async (c) => {
+    const user = c.get('user');
+    const credentialId = c.req.param('id');
+    const service = getWebAuthnService(c);
+    const result = await service.deleteCredential(user.email, credentialId);
+    return c.json(result);
 });
 
 export default auth;

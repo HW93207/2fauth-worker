@@ -41,12 +41,25 @@ CREATE TABLE IF NOT EXISTS backup_telegram_history (
     created_at INTEGER NOT NULL
 );
 
+-- Passkey 凭证表
+CREATE TABLE IF NOT EXISTS auth_passkeys (
+    credential_id TEXT PRIMARY KEY,    -- 凭证唯一标识
+    user_id TEXT NOT NULL,             -- 关联用户标识 (Email)
+    public_key BLOB NOT NULL,          -- 导出的公钥
+    counter INTEGER DEFAULT 0,         -- 签名计数器
+    name TEXT,                         -- 硬件名称/别名
+    transports TEXT,                   -- 允许的传输方式 (JSON array)
+    created_at INTEGER NOT NULL,
+    last_used_at INTEGER
+);
+
 -- 索引
 DROP INDEX IF EXISTS idx_vault_service;
 CREATE INDEX IF NOT EXISTS idx_vault_created_at ON vault(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_backup_providers_type ON backup_providers(type);
 CREATE INDEX IF NOT EXISTS idx_vault_service_created_at ON vault(service, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_backup_telegram_history_provider_id ON backup_telegram_history(provider_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_passkeys_user_id ON auth_passkeys(user_id);
 
 -- Remove any existing duplicates before enforcing unique constraint; keep the earliest
 DELETE FROM vault

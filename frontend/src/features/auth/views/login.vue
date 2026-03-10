@@ -20,7 +20,7 @@
             class="oauth-btn"
             :style="{ backgroundColor: provider.color, borderColor: provider.color }"
             :loading="loadingProvider === provider.id"
-            :disabled="!!loadingProvider && loadingProvider !== provider.id"
+            :disabled="(!!loadingProvider && loadingProvider !== provider.id) || loadingPasskey"
             @click="handleLogin(provider.id)"
           >
             <template #icon>
@@ -31,6 +31,24 @@
             {{ $t('auth.login_with', { provider: provider.name }) }}
           </el-button>
         </template>
+
+        <div class="login-divider" v-if="providers.length > 0">
+          OR
+        </div>
+
+        <!-- Passkey Login -->
+        <el-button
+          type="primary"
+          size="large"
+          class="oauth-btn passkey-btn"
+          :loading="loadingPasskey"
+          @click="handlePasskeyLogin"
+        >
+          <template #icon>
+            <el-icon><iconFingerprint /></el-icon>
+          </template>
+          {{ $t('auth.passkey_login') }}
+        </el-button>
       </div>
 
       <div class="footer-tips">
@@ -47,14 +65,23 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { Lock, Platform, Loading } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import iconGithub from '@/shared/components/icons/iconGithub.vue'
 import iconGoogle from '@/shared/components/icons/iconGoogle.vue'
 import iconGitee from '@/shared/components/icons/iconGitee.vue'
 import iconTelegram from '@/shared/components/icons/iconTelegram.vue'
 import iconCloudflare from '@/shared/components/icons/iconCloudflare.vue'
 import iconNodeloc from '@/shared/components/icons/iconNodeloc.vue'
+import iconFingerprint from '@/shared/components/icons/iconFingerprint.vue'
 import { useOAuthProviders } from '@/features/auth/composables/useOAuthProviders'
+import { webAuthnService } from '@/features/auth/service/webAuthnService'
+import { useAuthUserStore } from '@/features/auth/store/authUserStore'
+
+const { t } = useI18n()
+const authUserStore = useAuthUserStore()
 
 const iconComponents = {
   iconGithub,
@@ -71,4 +98,34 @@ const {
   isFetchingProviders,
   handleLogin
 } = useOAuthProviders()
+
+const loadingPasskey = ref(false)
+
+const handlePasskeyLogin = async () => {
+  if (!webAuthnService.isSupported()) {
+    ElMessage.warning(t('auth.passkey_not_supported'))
+    return
+  }
+
+  loadingPasskey.value = true
+  try {
+    const res = await webAuthnService.login()
+    if (res.success) {
+      // Passkey 登录逻辑与 OAuth 回调成功后一致
+      await authUserStore.setUserInfo(res.userInfo)
+      // 设备指纹 key (Passkey 登录暂时可以不强制要求 deviceKey，或者由后端生成返回)
+      if (res.deviceKey) {
+        localStorage.setItem('device_key', res.deviceKey)
+      }
+      
+      ElMessage.success(t('common.success'))
+      window.location.href = '/'
+    }
+  } catch (error) {
+    console.error('Passkey login failed:', error)
+    // 错误在 Axios 拦截器中处理，这里仅做状态清理
+  } finally {
+    loadingPasskey.value = false
+  }
+}
 </script>

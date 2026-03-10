@@ -60,6 +60,37 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+.passkey-btn {
+    margin-bottom: 5px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.login-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    margin: 10px 0;
+}
+
+.login-divider::before,
+.login-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px dashed var(--el-border-color-lighter);
+}
+
+.login-divider:not(:empty)::before {
+    margin-right: .5em;
+}
+
+.login-divider:not(:empty)::after {
+    margin-left: .5em;
+}
+
 .footer-tips {
     margin-top: 10px;
 }

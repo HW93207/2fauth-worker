@@ -52,13 +52,14 @@ jobs:
 
       - name: Install Project Dependencies
         if: env.SECURITY_SNYK_TOKEN != ''
+        continue-on-error: true
         env:
-          SECURITY_PACKAGE: ${{ vars.SECURITY_PACKAGE || '' }}
+          SECURITY_PACKAGE: ${{ vars.SECURITY_PACKAGE || secrets.SECURITY_PACKAGE || env.SECURITY_PACKAGE || '' }}
         run: |
           echo "Preparing dependency lock files for security scanning..."
           if [ -z "$SECURITY_PACKAGE" ]; then
             echo "SECURITY_PACKAGE is empty, installing in root..."
-            npm install --package-lock-only
+            npm install --package-lock-only --legacy-peer-deps
           else
             echo "SECURITY_PACKAGE is set to: $SECURITY_PACKAGE"
             # Split by comma and install
@@ -66,7 +67,7 @@ jobs:
             for pkg in "${PACKAGES[@]}"; do
               if [ -d "$pkg" ]; then
                 echo "Installing in "$pkg"..."
-                npm install --prefix "$pkg" --package-lock-only
+                npm install --prefix "$pkg" --package-lock-only --legacy-peer-deps
               else
                 echo "Warning: Directory $pkg not found, skipping."
               fi
@@ -103,12 +104,13 @@ jobs:
           trivy config . --format json --output trivy_result.json --severity CRITICAL,HIGH || true
 
       - name: Generate Security Report
+        if: always()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Gitleaks typically produces results.sarif if configured or by default in some versions
           # We'll ensure it exists for our reporter
-          node .github/scripts/security.js
+          node .github/scripts/security.cjs
           
           # Also append to step summary for immediate visibility in GHA UI
           cat README.md >> $GITHUB_STEP_SUMMARY
@@ -123,7 +125,7 @@ jobs:
           category: gitleaks
 
       - name: Push to Audit Branch
-        if: github.event_name != 'pull_request'
+        if: always() && github.event_name != 'pull_request'
         run: |
           mkdir audit_temp
           cp README.md audit_temp/

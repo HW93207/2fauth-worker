@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
+    "@simplewebauthn/browser": "^13.3.0",
     "@tanstack/vue-query": "^5.66.0",
     "argon2-browser": "^1.18.0",
     "bcryptjs": "^3.0.3",

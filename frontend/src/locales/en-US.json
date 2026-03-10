@@ -41,6 +41,7 @@
         "backup": "Cloud Backup",
         "migration": "Migration",
         "tools": "Toolbox",
+        "security": "PassKey",
         "settings": "Settings",
         "logout": "Sign Out"
     },
@@ -485,6 +486,8 @@
         "login_with": "Login with {provider}",
         "privacy_title": "Privacy & Security Note",
         "privacy_desc": "The system validates identity based on the OAuth 2.0 protocol and will never capture, log, or transmit your password.",
+        "passkey_login": "Login with Passkey",
+        "passkey_not_supported": "Your browser or device does not support Passkeys",
         "secure_login_in_progress": "Secure login in progress",
         "secure_login_sub": "Please wait, exchanging security credentials with {provider}...",
         "auth_failed_title": "Authorization Failed",
@@ -564,6 +567,10 @@
         "webdav_download_failed": "WebDAV fallback download failed",
         "webdav_delete_failed": "WebDAV fallback delete failed",
         "unsupported_provider": "Unsupported provider",
+        "webauthn_challenge_missing": "Authentication challenge expired, please refresh and try again",
+        "webauthn_registration_failed": "Passkey registration failed",
+        "webauthn_login_failed": "Passkey login failed",
+        "passkey_not_found": "No matching Passkey credential found",
         "health_check_failed": "Security vulnerability detected! System access is locked."
     },
     "healthCheck": {
@@ -649,5 +656,22 @@
         "copy_unsupported": "Your browser doesn't support automatic copying, please manually select it.",
         "copy_success": "Key copied to clipboard",
         "connection_failed": "Cannot connect to server for health check"
+    },
+    "security": {
+        "management": "Passkey Management",
+        "passkey_title": "Passkey Management",
+        "passkey_desc": "Enable passwordless login using biometrics such as fingerprint or face recognition for a more secure and convenient access experience.",
+        "passkey_list": "Registered Passkeys",
+        "add_passkey": "Add Passkey",
+        "no_passkeys": "You haven't registered any Passkeys yet",
+        "credential_name": "Device Name",
+        "created_at": "Added",
+        "last_used": "Last Used",
+        "delete_confirm": "Are you sure you want to remove this Passkey? You will no longer be able to login directly with this device.",
+        "add_dialog_title": "Add New Passkey",
+        "add_dialog_tip": "Give your device a recognizable name (e.g., My iPhone 15).",
+        "default_name": "My New Device",
+        "registering": "Communicating with hardware...",
+        "register_success": "Passkey registered successfully!"
     }
 }

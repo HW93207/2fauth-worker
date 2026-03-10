@@ -41,6 +41,7 @@
         "backup": "云端备份",
         "migration": "数据迁移",
         "tools": "实用工具",
+        "security": "通行密钥",
         "settings": "系统设置",
         "logout": "退出登录"
     },
@@ -486,6 +487,8 @@
         "login_with": "通过 {provider} 授权登录",
         "privacy_title": "安全隐私提示",
         "privacy_desc": "系统基于 OAuth 2.0 协议验证身份，绝不会获取、记录或传输您的密码信息。",
+        "passkey_login": "通过通行密钥登录",
+        "passkey_not_supported": "您的浏览器或设备不支持通行密钥",
         "secure_login_in_progress": "正在安全登录中",
         "secure_login_sub": "请稍候，系统正在与 {provider} 交换安全凭证...",
         "auth_failed_title": "授权失败",
@@ -565,6 +568,10 @@
         "webdav_download_failed": "WebDAV 备选方案下载失败",
         "webdav_delete_failed": "WebDAV 备选方案删除失败",
         "unsupported_provider": "不支持的提供商",
+        "webauthn_challenge_missing": "身份验证挑战已过期，请刷新页面重试",
+        "webauthn_registration_failed": "通行密钥注册失败",
+        "webauthn_login_failed": "通行密钥登录失败",
+        "passkey_not_found": "未找到对应的通行密钥凭证",
         "health_check_failed": "环境配置漏洞警告，系统已被锁定！"
     },
     "healthCheck": {
@@ -650,5 +657,22 @@
         "copy_unsupported": "您的浏览器不支持自动复制，请手动选中复制。",
         "copy_success": "安全密钥已复制到剪贴板",
         "connection_failed": "无法连接到服务端进行安全校验"
+    },
+    "security": {
+        "management": "通行密钥管理",
+        "passkey_title": "通行密钥管理",
+        "passkey_desc": "通过生物识别（如指纹或面容）实现无密码登录，为您提供更安全、更快速的账户访问体验。",
+        "passkey_list": "已绑定的通行密钥",
+        "add_passkey": "添加通行密钥",
+        "no_passkeys": "您尚未绑定任何通行密钥",
+        "credential_name": "设备名称",
+        "created_at": "绑定时间",
+        "last_used": "最后使用",
+        "delete_confirm": "确定要移除这个通行密钥吗？移除后您将无法使用该设备直接登录。",
+        "add_dialog_title": "添加新的通行密钥",
+        "add_dialog_tip": "建议为您的设备起一个容易辨识的名称（如：我的 iPhone 15）。",
+        "default_name": "我的新设备",
+        "registering": "正在与硬件通信...",
+        "register_success": "通行密钥绑定成功！"
     }
 }

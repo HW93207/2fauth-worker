@@ -45,6 +45,17 @@ export const backupTelegramHistory = sqliteTable('backup_telegram_history', {
   createdAt: integer('created_at').notNull(),
 });
 
+// 4. 通行密钥表 (Passkeys)
+export const authPasskeys = sqliteTable('auth_passkeys', {
+  credentialId: text('credential_id').primaryKey(), // 唯一凭据 ID
+  userId: text('user_id').notNull(),                // 在本应用中绑定的是邮箱
+  name: text('name'),                               // 别名
+  publicKey: text('public_key').notNull(),          // Uint8Array 序列化后的数组
+  counter: integer('counter').default(0),           // 认证流计算器
+  lastUsedAt: integer('last_used_at'),              // 最后一次使用的时间戳
+  createdAt: integer('created_at').notNull(),
+});
+
 // 导出类型定义
 export type VaultItem = typeof vault.$inferSelect;
 export type NewVaultItem = typeof vault.$inferInsert;

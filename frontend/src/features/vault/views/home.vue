@@ -39,6 +39,11 @@
           <UtilityTools />
         </div>
 
+        <!-- 视图：安全设置 -->
+        <div v-if="activeTab === 'security'" class="view-container">
+          <SecuritySettings />
+        </div>
+
       </el-main>
     </el-container>
   </el-container>
@@ -59,13 +64,14 @@ const DataExport    = createAsyncComponent(() => import('@/features/migration/vi
 const DataImport    = createAsyncComponent(() => import('@/features/migration/views/dataImport.vue'))
 const DataBackup    = createAsyncComponent(() => import('@/features/backup/views/dataBackup.vue'))
 const UtilityTools  = createAsyncComponent(() => import('@/features/tools/views/utilityTools.vue'))
+const SecuritySettings = createAsyncComponent(() => import('@/features/auth/views/securitySettings.vue'))
 
 const sessionKey = 'activeTab'
 const activeTab    = ref(sessionStorage.getItem(sessionKey) || 'vault')
 
 onMounted(() => {
   // 强制校准：如果状态非法，回归默认视图
-  const validTabs = ['vault', 'add-vault-scan', 'add-vault-manual', 'migration-export', 'migration-import', 'backups', 'tools']
+  const validTabs = ['vault', 'add-vault-scan', 'add-vault-manual', 'migration-export', 'migration-import', 'backups', 'tools', 'security']
   if (!validTabs.includes(activeTab.value)) {
     activeTab.value = 'vault'
   }
