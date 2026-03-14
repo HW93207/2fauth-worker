@@ -30,14 +30,19 @@ import { vaultError } from '@/shared/utils/errors/vaultError'
 export const vaultService = {
     /**
      * 分页获取账号列表
-     * @param {{ page?: number, limit?: number, search?: string }} params
+     * @param {{ page?: number, limit?: number, search?: string, category?: string, sortBy?: string }} params
      * @returns {Promise<VaultListResponse>}
      * @throws {vaultError}
      */
-    async getVault(params = {}) {
+    async getVault({ page = 1, limit = 12, search = '', category = '' }) {
         try {
-            const query = new URLSearchParams(params).toString()
-            return await request(`/api/vault?${query}`)
+            const params = new URLSearchParams({
+                page,
+                limit,
+                search,
+                category
+            })
+            return await request(`/api/vault?${params.toString()}`)
         } catch (e) {
             throw new vaultError('Failed to fetch vault list', 'VAULT_FETCH_FAILED', e)
         }
@@ -106,6 +111,21 @@ export const vaultService = {
             })
         } catch (e) {
             throw new vaultError('Failed to batch delete accounts', 'ACCOUNTS_BATCH_DELETE_FAILED', e)
+        }
+    },
+
+    /**
+     * 手动重排序
+     * @param {string[]} ids 
+     */
+    async reorder(ids) {
+        try {
+            return await request('/api/vault/reorder', {
+                method: 'POST',
+                body: JSON.stringify({ ids })
+            })
+        } catch (e) {
+            throw new vaultError('Failed to reorder accounts', 'VAULT_REORDER_FAILED', e)
         }
     },
 

@@ -23,13 +23,15 @@ vault.get('/', async (c) => {
     const page = parseInt(c.req.query('page') || '1', 10);
     const limit = parseInt(c.req.query('limit') || '12', 10);
     const search = c.req.query('search') || '';
+    const category = c.req.query('category') || '';
 
     const service = getService(c);
-    const result = await service.getAccountsPaginated(page, limit, search);
+    const result = await service.getAccountsPaginated(page, limit, search, category);
 
     return c.json({
         success: true,
         vault: result.items,
+        categoryStats: result.categoryStats,
         pagination: {
             page,
             limit,
@@ -37,6 +39,17 @@ vault.get('/', async (c) => {
             totalPages: result.totalPages
         }
     });
+});
+
+// 重新排序
+vault.post('/reorder', async (c) => {
+    const { ids } = await c.req.json();
+    if (!Array.isArray(ids)) {
+        return c.json({ success: false, error: 'ids must be an array' }, 400);
+    }
+    const service = getService(c);
+    await service.reorderAccounts(ids);
+    return c.json({ success: true });
 });
 
 // 添加新账户

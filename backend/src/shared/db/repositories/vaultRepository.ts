@@ -1,4 +1,4 @@
-import { eq, inArray, desc, like, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, like, or, sql } from 'drizzle-orm';
 import { vault, type VaultItem, type NewVaultItem } from '@/shared/db/schema';
 
 export class VaultRepository {
@@ -19,56 +19,91 @@ export class VaultRepository {
     }
 
     /**
-     * 获取分页和搜索过滤的 vault items
+     * 获取当前最大排序值
      */
-    async findPaginated(page: number, limit: number, search: string): Promise<VaultItem[]> {
-        const offset = (page - 1) * limit;
+    async getMaxSortOrder(): Promise<number> {
+        const result = await this.db
+            .select({ maxSort: sql<number>`max(${vault.sortOrder})` })
+            .from(vault);
+        return result[0]?.maxSort || 0;
+    }
 
-        // 构建条件
-        let condition;
+    /**
+     * 分页查询
+     */
+    async findPaginated(page: number, limit: number, search: string = '', category: string = ''): Promise<VaultItem[]> {
+        let query = this.db.select().from(vault);
+
+        const conditions = [];
         if (search) {
-            const pattern = `%${search}%`;
-            condition = or(
-                like(vault.service, pattern),
-                like(vault.account, pattern),
-                like(vault.category, pattern)
-            );
+            conditions.push(or(
+                like(vault.service, `%${search}%`),
+                like(vault.account, `%${search}%`),
+                like(vault.category, `%${search}%`)
+            ));
+        }
+        if (category) {
+            conditions.push(eq(vault.category, category));
         }
 
-        let query = this.db
-            .select()
-            .from(vault);
-
-        if (condition) {
-            query = query.where(condition) as any;
+        if (conditions.length > 0) {
+            query = query.where(and(...conditions as any));
         }
 
         return await query
-            .orderBy(desc(vault.createdAt))
             .limit(limit)
-            .offset(offset);
+            .offset((page - 1) * limit)
+            .orderBy(desc(vault.sortOrder), desc(vault.createdAt));
+    }
+
+    /**
+     * 获取分类统计
+     */
+    async getCategoryStats(): Promise<{ category: string, count: number }[]> {
+        return await this.db
+            .select({
+                category: vault.category,
+                count: sql<number>`count(*)`
+            })
+            .from(vault)
+            .groupBy(vault.category);
+    }
+
+    /**
+     * 批量更新排序
+     */
+    async updateSortOrders(updates: { id: string, sortOrder: number }[]): Promise<void> {
+        for (const update of updates) {
+            await this.db
+                .update(vault)
+                .set({ sortOrder: update.sortOrder })
+                .where(eq(vault.id, update.id))
+                .run();
+        }
     }
 
     /**
      * 获取满足条件的总记录数，用于分页计算
      */
-    async count(search: string): Promise<number> {
-        let condition;
-        if (search) {
-            const pattern = `%${search}%`;
-            condition = or(
-                like(vault.service, pattern),
-                like(vault.account, pattern),
-                like(vault.category, pattern)
-            );
-        }
-
+    async count(search: string, category: string = ''): Promise<number> {
         let query = this.db
             .select({ count: sql<number>`count(*)` })
             .from(vault);
 
-        if (condition) {
-            query = query.where(condition) as any;
+        const conditions = [];
+        if (search) {
+            conditions.push(or(
+                like(vault.service, `%${search}%`),
+                like(vault.account, `%${search}%`),
+                like(vault.category, `%${search}%`)
+            ));
+        }
+        if (category) {
+            conditions.push(eq(vault.category, category));
+        }
+
+        if (conditions.length > 0) {
+            query = query.where(and(...conditions as any));
         }
 
         const result = await query;
@@ -92,15 +127,16 @@ export class VaultRepository {
      * 根据 service/account 查找记录 (大小写不敏感，自动 trim)
      */
     async findByServiceAccount(service: string, account: string): Promise<VaultItem | undefined> {
-        // 使用 lower() 函数进行数据库级别的大小写不敏感比较
         const normalizedService = service.trim().toLowerCase();
         const normalizedAccount = account.trim().toLowerCase();
         const result = await this.db
             .select()
             .from(vault)
             .where(
-                sql`lower(${vault.service}) = ${normalizedService}`,
-                sql`lower(${vault.account}) = ${normalizedAccount}`
+                and(
+                    sql`lower(${vault.service}) = ${normalizedService}`,
+                    sql`lower(${vault.account}) = ${normalizedAccount}`
+                )
             )
             .limit(1);
         return result[0];
@@ -120,7 +156,6 @@ export class VaultRepository {
     async batchCreate(items: NewVaultItem[]): Promise<void> {
         if (!items || items.length === 0) return;
 
-        // SQLite D1 limits variables, chunking is good practice
         const BATCH_SIZE = 50;
         for (let i = 0; i < items.length; i += BATCH_SIZE) {
             const chunk = items.slice(i, i + BATCH_SIZE);

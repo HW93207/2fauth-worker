@@ -33,7 +33,9 @@
         "account_identifier": "账号标识 (如 邮箱地址)",
         "category_optional": "分类 (可选)",
         "data_security": "数据安全",
-        "warning": "警告"
+        "warning": "警告",
+        "uncategorized": "未分类",
+        "all": "全部"
     },
     "menu": {
         "vault": "我的账号",
@@ -99,7 +101,14 @@
         "hide_secret": "隐藏",
         "show_secret": "显示",
         "copy_secret": "复制密钥",
-        "copy_otp_url": "复制原始 otpauth 链接"
+        "copy_otp_url": "复制原始 otpauth 链接",
+        "total_count": "共 {count} 个账号",
+        "filtered_count": "分类「{category}」下共 {count} 个账号",
+        "sort_updated": "账号顺序已更新",
+        "sort_by": "排序方式",
+        "sort_manual": "手动排序",
+        "sort_name": "名称 (A-Z)",
+        "sort_newest": "最新添加"
     },
     "backup": {
         "providers": "备份配置",

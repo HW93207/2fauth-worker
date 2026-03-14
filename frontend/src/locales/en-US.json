@@ -33,7 +33,9 @@
         "account_identifier": "Account Identifier (e.g., Email)",
         "category_optional": "Category (Optional)",
         "data_security": "Data Security",
-        "warning": "Warning"
+        "warning": "Warning",
+        "uncategorized": "Uncategorized",
+        "all": "All"
     },
     "menu": {
         "vault": "Vault List",
@@ -99,7 +101,14 @@
         "hide_secret": "Hide",
         "show_secret": "Show",
         "copy_secret": "Copy Secret",
-        "copy_otp_url": "Copy raw otpauth URL"
+        "copy_otp_url": "Copy raw otpauth URL",
+        "total_count": "Total {count} accounts",
+        "filtered_count": "Total {count} accounts in \"{category}\"",
+        "sort_updated": "Account order updated",
+        "sort_by": "Sort By",
+        "sort_manual": "Manual",
+        "sort_name": "Name (A-Z)",
+        "sort_newest": "Newest"
     },
     "backup": {
         "providers": "Backup Providers",

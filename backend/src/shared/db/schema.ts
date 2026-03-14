@@ -16,6 +16,7 @@ export const vault = sqliteTable('vault', {
   createdBy: text('created_by'), // 'username' or 'restore'
   updatedAt: integer('updated_at'),
   updatedBy: text('updated_by'),
+  sortOrder: integer('sort_order').default(0),
 });
 
 // 2. 备份提供商表 (Backup Providers)

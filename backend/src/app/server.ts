@@ -7,6 +7,7 @@ import * as schema from '@/shared/db/schema.js';
 import { handleScheduledBackup } from '@/features/backup/backupRoutes.js';
 import fs from 'fs';
 import path from 'path';
+import { migrateDatabase } from '@/shared/db/migrator.js';
 
 // 1. Resolve paths
 // In Docker, we run from /app, and frontend is at /app/frontend/dist
@@ -63,20 +64,47 @@ sqlite.pragma('journal_mode = WAL');
 // 4. Initialize Drizzle ORM
 const db = drizzle(sqlite, { schema });
 
-// 5. Run migrations/schema creation if needed
+// 5. Run migrations/schema creation
 const checkTable = sqlite.prepare("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='vault'").get() as any;
 if (checkTable['count(*)'] === 0) {
-    console.log('Initializing database schema...');
-    // In Docker, schema.sql is copied to the root /app/
+    console.log('[Database] Empty database detected. Initializing with baseline schema...');
     const schemaFile = fs.existsSync(path.join(baseDir, 'schema.sql'))
         ? path.join(baseDir, 'schema.sql')
-        : path.join(baseDir, 'backend/schema.sql'); // fallback for local dev
+        : path.join(baseDir, 'backend/schema.sql');
     const schemaSql = fs.readFileSync(schemaFile, 'utf-8');
     sqlite.exec(schemaSql);
-    console.log('Database initialized.');
+    console.log('[Database] Baseline schema initialized.');
 }
 
-// 6. Setup environment for Hono
+// 6. Apply sequence migrations (Elegant way)
+const dbExecutor = {
+    exec: (sql: string) => { sqlite.exec(sql); },
+    prepare: (sql: string) => {
+        const stmt = sqlite.prepare(sql);
+        return {
+            get: () => stmt.get(),
+            run: (...params: any[]) => stmt.run(...params)
+        };
+    }
+};
+
+try {
+    // await for async migration
+    (async () => {
+        try {
+            await migrateDatabase(dbExecutor as any);
+            console.log('[Database] Migrations verified/applied.');
+        } catch (e: any) {
+            console.error('[Database] Critical: Migration failed:', e.message);
+            process.exit(1);
+        }
+    })();
+} catch (e) {
+    console.error('[Database] Unexpected error during migration boot.');
+    process.exit(1);
+}
+
+// 7. Setup environment for Hono
 const envTemplate = {
     DB: db,
     ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
@@ -85,7 +113,7 @@ const envTemplate = {
     ...process.env
 };
 
-// 7. Define the ASSETS.fetch logic for Node.js
+// 8. Define the ASSETS.fetch logic for Node.js
 // This replaces Cloudflare's ASSETS.fetch
 const nodeAssetsFetch = async (request: Request): Promise<Response> => {
     const url = new URL(request.url);

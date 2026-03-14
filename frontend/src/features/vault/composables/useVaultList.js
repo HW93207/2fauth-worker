@@ -26,7 +26,23 @@ export function useVaultList(afterLoadRef = null) {
 
     const vault = shallowRef([])
     const searchQuery = ref('')
+    const selectedCategory = ref('') // Added for filtering
     const pageSize = ref(12)
+    const localCategoryStats = ref([]) // 用于持久化加载的兜底缓存
+
+    // --- 分类统计 (派生自 Vue Query data，兜底本地缓存) ---
+    const categoryStats = computed(() => {
+        const firstPage = data.value?.pages?.[0]
+        const stats = firstPage?.categoryStats || localCategoryStats.value
+        if (!stats) return []
+        
+        return stats.map(s => ({
+            category: s.category || '',
+            count: s.count,
+            // 逻辑层映射：区分空分类与全部
+            id: s.category === '' ? '____UNCATEGORIZED____' : s.category
+        }))
+    })
 
     // --- Vue Query 分页逻辑 ---
     const fetchVaultPage = async ({ pageParam = 1, queryKey }) => {
@@ -34,6 +50,7 @@ export function useVaultList(afterLoadRef = null) {
         return await vaultService.getVault({
             page: pageParam,
             limit: pageSize.value,
+            category: selectedCategory.value === '____UNCATEGORIZED____' ? '' : selectedCategory.value, // Special mapping
             // queryKey[1] is the search string for THIS query's cache key, provided by Vue Query
             search: (queryKey && queryKey.length > 1) ? queryKey[1] : searchQuery.value
         })
@@ -49,7 +66,7 @@ export function useVaultList(afterLoadRef = null) {
         isError,
         refetch
     } = useInfiniteQuery({
-        queryKey: ['vault', searchQuery],
+        queryKey: ['vault', searchQuery, selectedCategory], // Removed sortBy from queryKey
         queryFn: fetchVaultPage,
         getNextPageParam: (lastPage) => {
             if (!lastPage || !lastPage.pagination) return undefined
@@ -112,18 +129,21 @@ export function useVaultList(afterLoadRef = null) {
             }
         }
 
-        // 3. 一次赋值完成渲染：已有项复用原有验证码，新增项验证码已预计算完毕
-        //    shallowRef .value = 新引用会自动通知 Vue，无需额外 triggerRef
+        // 3. 一次赋值完成渲染
         vault.value = merged
 
-        // 无搜索词时保存全量缓存（使用正确的 vaultStore API）
+        // 无搜索词时异步保存缓存 (包含分类统计)
         if (!searchQuery.value && vaultStore.isUnlocked) {
-            try {
-                await vaultStore.saveData({ vault: merged })
-                vaultStore.clearDirty()
-            } catch (e) {
-                // 缓存写入失败静默处理
-            }
+            setTimeout(async () => {
+                try {
+                    await vaultStore.saveData({ 
+                        vault: merged,
+                        // 保存当前分类统计原始数据到持久层
+                        categoryStats: newData.pages[0]?.categoryStats || []
+                    })
+                    vaultStore.clearDirty()
+                } catch (e) {}
+            }, 0)
         }
     }, { deep: false })
 
@@ -139,6 +159,12 @@ export function useVaultList(afterLoadRef = null) {
         !hasNextPage.value || isFetchingNextPage.value || !vaultStore.isUnlocked || isError.value
     )
 
+    const totalItems = computed(() => data.value?.pages[0]?.pagination?.totalItems || 0)
+
+    const absoluteTotalItems = computed(() => {
+        return categoryStats.value.reduce((sum, s) => sum + s.count, 0)
+    })
+
     const handleLoadMore = () => {
         if (!isLoadMoreDisabled.value) {
             fetchNextPage()
@@ -148,11 +174,16 @@ export function useVaultList(afterLoadRef = null) {
     return {
         vault,
         searchQuery,
+        selectedCategory,
+        categoryStats,
+        localCategoryStats,
         pageSize,
         isLoading,
         isFetching,
         isFetchingNextPage,
         hasNextPage,
+        totalItems,
+        absoluteTotalItems,
         isError,
         isLoadMoreDisabled,
         fetchVault,

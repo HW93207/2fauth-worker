@@ -35,9 +35,10 @@ export class VaultService {
     /**
      * 获取分页和搜索条件后的所有账户 (解密)
      */
-    async getAccountsPaginated(page: number, limit: number, search: string) {
-        const items = await this.repository.findPaginated(page, limit, search);
-        const totalCount = await this.repository.count(search);
+    async getAccountsPaginated(page: number, limit: number, search: string, category: string = '') {
+        const items = await this.repository.findPaginated(page, limit, search, category);
+        const totalCount = await this.repository.count(search, category);
+        const categoryStats = await this.repository.getCategoryStats();
 
         const decryptedItems = await Promise.all(items.map(async (item) => ({
             ...item,
@@ -47,8 +48,28 @@ export class VaultService {
         return {
             items: decryptedItems,
             totalCount,
-            totalPages: Math.ceil(totalCount / limit) || 1
+            totalPages: Math.ceil(totalCount / limit) || 1,
+            categoryStats: categoryStats.map(s => ({
+                category: s.category || '',
+                count: s.count
+            }))
         };
+    }
+
+    /**
+     * 重新排序账户
+     */
+    async reorderAccounts(ids: string[]) {
+        if (!ids || ids.length === 0) return;
+
+        // 生成新的排序值，从 ids.length * 10 开始递减，确保新排序在最前且有间隔
+        const baseOrder = ids.length * 10;
+        const updates = ids.map((id, index) => ({
+            id,
+            sortOrder: baseOrder - index
+        }));
+
+        await this.repository.updateSortOrders(updates);
     }
 
     /**
@@ -82,6 +103,7 @@ export class VaultService {
 
         const normalizedSecret = secret.replace(/\s/g, '').toUpperCase();
         const encryptedSecret = await encryptField(normalizedSecret, this.encryptionKey);
+        const maxSort = await this.repository.getMaxSortOrder();
 
         return await this.repository.create({
             id: crypto.randomUUID(),
@@ -92,6 +114,7 @@ export class VaultService {
             algorithm: algorithm || 'SHA1',
             digits: digits || 6,
             period: period || 30,
+            sortOrder: maxSort + 1, // Ensure new account is at the top
             createdAt: Date.now(),
             createdBy: userId
         });
@@ -339,7 +362,8 @@ export class VaultService {
             }
         }
 
-        const insertedCount = await batchInsertVaultItems(this.env.DB, uniqueAccountsToInsert, this.encryptionKey, userId);
+        const maxSortOrder = await this.repository.getMaxSortOrder();
+        const insertedCount = await batchInsertVaultItems(this.env.DB, uniqueAccountsToInsert, this.encryptionKey, userId, maxSortOrder);
 
         return { count: insertedCount, total: validAccounts.length, duplicates: validAccounts.length - insertedCount };
     }

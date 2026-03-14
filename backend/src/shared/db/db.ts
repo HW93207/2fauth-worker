@@ -33,11 +33,12 @@ export async function batchInsertVaultItems(
     dbClient: any,
     items: any[],
     key: string,
-    createdBy: string
+    createdBy: string,
+    startSortOrder: number = 0
 ): Promise<number> {
 
     // 1. 准备数据 (规范化、加密、生成ID)
-    const preparedItems = await Promise.all(items.map(async (item) => {
+    const preparedItems = await Promise.all(items.map(async (item, index) => {
         // 规范化密钥 (去除空格，转大写)
         const normalizedSecret = (item.secret || '').replace(/\s/g, '').toUpperCase();
         const secretEncrypted = await encryptField(normalizedSecret, key);
@@ -51,6 +52,7 @@ export async function batchInsertVaultItems(
             algorithm: item.algorithm || 'SHA1',
             digits: item.digits || 6,
             period: item.period || 30,
+            sortOrder: startSortOrder > 0 ? startSortOrder + (items.length - index) : 0,
             createdAt: Date.now(),            // camelCase 匹配 Drizzle schema
             createdBy: createdBy,             // camelCase 匹配 Drizzle schema
         };

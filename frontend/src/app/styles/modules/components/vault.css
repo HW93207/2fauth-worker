@@ -1,4 +1,13 @@
 /* 搜索栏吸顶过渡动画 */
+
+.affix-container {
+    background-color: var(--el-bg-color-page);
+}
+
+.affix-container.is-affixed {
+    padding-top: 20px;
+}
+
 .vault-list-toolbar {
     transition: padding 0.3s ease, background-color 0.3s ease;
     box-sizing: border-box;
@@ -8,7 +17,6 @@
 .vault-list-toolbar.is-affixed {
     z-index: 2000;
     margin-bottom: 0 !important;
-    background-color: var(--el-bg-color-page);
 }
 
 /* 移动端吸顶效果：全屏、背景、边框 */
@@ -16,7 +24,6 @@
     .vault-list-toolbar.is-affixed {
         width: 100vw !important;
         margin-left: -20px !important;
-        /* 抵消 el-main 的内边距 */
         padding: 14px 20px !important;
         border-radius: 0 !important;
     }
@@ -30,16 +37,25 @@
     }
 }
 
+.vault-item-col {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+}
+
 /* VaultList.vue */
 .vault-card {
     border-radius: 12px;
     /* 全局规则已覆盖 transition，此处只需定义样式 */
     border: 1px solid var(--el-border-color-lighter);
     cursor: pointer;
-    background-color: var(--el-bg-color);
     height: 100%;
     display: flex;
     flex-direction: column;
+    /* 防止拖拽时触发系统原生行为 */
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .vault-card:hover {
@@ -74,6 +90,23 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    /* 禁用自动链接化与长按菜单 */
+    text-decoration: none !important;
+    -webkit-touch-callout: none;
+}
+
+/* 彻底屏蔽可能被注入的链接样式 */
+.service-name a, .vault-name a {
+    color: inherit !important;
+    text-decoration: none !important;
+    pointer-events: none !important;
+}
+
+/* 在移动端彻底禁用点击，防止触发自动识别的链接 */
+@media (max-width: 767px) {
+    .service-name, .vault-name {
+        pointer-events: none !important;
+    }
 }
 
 /* 让卡片内容撑开，底部对齐 */
@@ -88,6 +121,13 @@
     font-size: 14px;
     margin: 0 0 10px 24px;
     word-break: break-all;
+    /* 禁用自动链接化、下划线与长按菜单 */
+    text-decoration: none !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
 }
 
 .more-icon {
@@ -267,4 +307,99 @@
 
 .vault-manual-submit-btn {
     width: 100%;
+}
+
+/* --- 拖拽交互态 --- */
+.is-dragging {
+    opacity: 0.3 !important;
+    background-color: var(--el-fill-color-lighter) !important;
+    border: 2px dashed var(--el-color-primary) !important;
+    box-shadow: none !important;
+    transform: scale(0.96) !important;
+}
+
+.is-dragging * {
+    visibility: hidden !important;
+}
+
+.is-pressing {
+    transform: scale(0.96) !important;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background-color: var(--el-fill-color-light) !important;
+}
+
+.drag-floating-card {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.95;
+    transform: scale(1.05);
+    /* 移除旋转 */
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3) !important;
+    transition: transform 0.1s ease-out;
+}
+
+/* 消息提示磨砂风格 (全局样式注入建议) */
+:deep(.message-success-blur) {
+    background: rgba(103, 194, 58, 0.1) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(103, 194, 58, 0.2);
+    border-radius: 12px;
+}
+
+/* 拖拽中的过渡动画优化 */
+.vault-list-move {
+    transition: transform 0.4s cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+/* --- 分类 Tags (回归 Chips 样式) --- */
+.category-filter-container {
+    padding: 5px 0 20px 0px;
+}
+
+.category-chips {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.category-chips::-webkit-scrollbar {
+    display: none;
+}
+
+.category-tag {
+    cursor: pointer;
+    background: var(--el-fill-color-light);
+    color: var(--el-text-color-regular);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.category-tag:hover {
+    background: var(--el-fill-color);
+}
+
+/* 合并后的激活状态 */
+.category-tag.is-active {
+    background-color: var(--el-color-primary) !important;
+    color: #fff !important;
+    border-color: var(--el-color-primary) !important;
+    font-weight: 500;
+}
+
+.category-tag.is-active .tag-count {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.tag-count {
+    margin-left: 5px;
+    font-size: 11px;
 }

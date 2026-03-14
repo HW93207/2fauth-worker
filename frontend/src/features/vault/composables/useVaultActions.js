@@ -1,19 +1,22 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import QRCode from 'qrcode'
 import { useVaultStore } from '@/features/vault/store/vaultStore'
 import { vaultService } from '@/features/vault/service/vaultService'
 import { copyToClipboard } from '@/shared/utils/common'
 import { i18n } from '@/locales'
+import { useQueryClient } from '@tanstack/vue-query'
 
 /**
  * 管理账号的增删改查与二维码展示等弹窗行为
  * @param {Function} fetchVault - 操作成功后用于刷新列表的回调
  * @param {import('vue').ShallowRef} vault - 当前账号列表（用于全选）
+ * @param {import('vue').Ref} categoryStats - 现有分类统计（用于下拉选择）
  * @returns Composable state and actions
  */
-export function useVaultActions(fetchVault, vault) {
+export function useVaultActions(fetchVault, vault, categoryStats) {
     const vaultStore = useVaultStore()
+    const queryClient = useQueryClient()
     const { t } = i18n.global
 
     // --- 批量操作 ---
@@ -106,6 +109,44 @@ export function useVaultActions(fetchVault, vault) {
         }
     }
 
+    // --- 极致乐观重排序 (Optimistic Reorder) ---
+    const performReorder = async (newItems, oldItems) => {
+        const isChanged = newItems.some((item, index) => item.id !== oldItems[index]?.id)
+        if (!isChanged) return
+
+        // 1. 立即给反馈
+        const successMsg = ElMessage.success({ 
+            message: t('vault.sort_updated'), 
+            duration: 1500, 
+            customClass: 'message-success-blur'
+        })
+
+        // 2. 乐观更新 Vue Query 缓存，防止后台 refetch 时顺序跳回旧版
+        queryClient.setQueriesData({ queryKey: ['vault'] }, (oldData) => {
+            if (!oldData) return oldData
+            // 将平铺后的 newItems 按原有的分页结构重新划分（简化处理：目前支持主列表全局排序）
+            // 我们直接标记所有页面数据失效并立即同步
+            return {
+                ...oldData,
+                pages: oldData.pages.map(page => ({
+                    ...page,
+                    vault: newItems.filter(item => page.vault.some(oi => oi.id === item.id))
+                }))
+            }
+        })
+
+        try {
+            await vaultService.reorder(newItems.map(i => i.id))
+            vaultStore.markDirty()
+        } catch (e) {
+            successMsg?.close()
+            ElMessage.error(t('common.error'))
+            // 失败回退：重推旧顺序到 UI
+            vault.value = oldItems
+            fetchVault() 
+        }
+    }
+
     // --- 删除单个账号 ---
     const deleteVault = async (vaultItem) => {
         try {
@@ -173,6 +214,11 @@ export function useVaultActions(fetchVault, vault) {
         currentQrItem,
         showSecret,
         qrCodeUrl,
+        categoryOptions: computed(() => {
+            return (categoryStats?.value || [])
+                .filter(s => s.category) // 排除“未分类”空字符串项，由 Select 的 allow-create 或手动清空处理
+                .map(s => s.category)
+        }),
 
         toggleSelection,
         selectAllLoaded,
@@ -186,5 +232,6 @@ export function useVaultActions(fetchVault, vault) {
         copyOtpUrl,
         formatSecret,
         handleCommand,
+        performReorder
     }
 }

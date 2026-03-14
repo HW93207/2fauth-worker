@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS vault (
     created_at INTEGER,
     created_by TEXT,
     updated_at INTEGER,
-    updated_by TEXT
+    updated_by TEXT,
+    sort_order INTEGER DEFAULT 0
 );
 
 -- 云端备份源配置表
@@ -72,14 +73,7 @@ CREATE INDEX IF NOT EXISTS idx_backup_telegram_history_provider_id ON backup_tel
 CREATE INDEX IF NOT EXISTS idx_backup_email_history_provider_id ON backup_email_history(provider_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_passkeys_user_id ON auth_passkeys(user_id);
 
--- Remove any existing duplicates before enforcing unique constraint; keep the earliest
-DELETE FROM vault
-WHERE rowid NOT IN (
-    SELECT MIN(rowid)
-    FROM vault
-    GROUP BY lower(service), lower(account)
-);
-
+-- 唯一索引
 CREATE UNIQUE INDEX IF NOT EXISTS vault_service_account_uq ON vault(lower(service), lower(account));
 
 -- 速率限制表
@@ -90,3 +84,14 @@ CREATE TABLE IF NOT EXISTS rate_limits (
     expires_at INTEGER           -- 锁定过期时间 (如果有)
 );
 CREATE INDEX IF NOT EXISTS idx_rate_limits_expires ON rate_limits(expires_at);
+
+-- =============================================================================
+-- 数据库版本初始化 (元数据表方案)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS _schema_metadata (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
+
+-- 索引优化：这些高级索引将由应用端的 migrator.ts 自动在运行时异步同步，以兼容存量 D1 数据库
+-- 初始 schema 仅保留基础表结构

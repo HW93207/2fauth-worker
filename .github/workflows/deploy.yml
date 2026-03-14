@@ -87,8 +87,8 @@ jobs:
           fi
           printf "\n[[d1_databases]]\nbinding = \"DB\"\ndatabase_name = \"$CLOUDFLARE_D1_DATABASE_NAME\"\ndatabase_id = \"$CLOUDFLARE_D1_DATABASE_ID\"\n" >> wrangler.toml
 
-      # 更新数据库结构
-      - name: Update Database Schema
+      # 数据库初始化与同步：基础 Schema 创建。后续增量演进由后端代码自愈完成。
+      - name: Sync Database Schema
         uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
