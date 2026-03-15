@@ -9,6 +9,8 @@ import fs from 'fs';
 import path from 'path';
 import { migrateDatabase } from '@/shared/db/migrator.js';
 
+const logLevel = (process.env.LOG_LEVEL || 'info').toLowerCase();
+
 // 1. Resolve paths
 // In Docker, we run from /app, and frontend is at /app/frontend/dist
 // The server.js is at /app/backend/dist/server.js
@@ -16,8 +18,10 @@ const baseDir = process.cwd(); // Should be /app in Docker
 const frontendDistPath = path.resolve(baseDir, 'frontend/dist');
 const dataDir = path.resolve(baseDir, 'data');
 
-console.log(`[Docker Server] Base directory: ${baseDir}`);
-console.log(`[Docker Server] Frontend dist path: ${frontendDistPath}`);
+if (logLevel !== 'error' && logLevel !== 'warn') {
+    console.log(`[Docker Server] Base directory: ${baseDir}`);
+    console.log(`[Docker Server] Frontend dist path: ${frontendDistPath}`);
+}
 
 // 2. Ensure data directory exists and is writable
 if (!fs.existsSync(dataDir)) {
@@ -96,7 +100,9 @@ try {
     (async () => {
         try {
             await migrateDatabase(dbExecutor as any);
-            console.log('[Database] Migrations verified/applied.');
+            if (logLevel !== 'error' && logLevel !== 'warn') {
+                console.log('[Database] Migrations verified/applied.');
+            }
         } catch (e: any) {
             console.error('[Database] Critical: Migration failed:', e.message);
             process.exit(1);

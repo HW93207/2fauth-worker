@@ -21,6 +21,9 @@ services:
       # [必填] 允许登录系统的用户邮箱或Telegram用户名，多个用逗号隔开
       - OAUTH_ALLOWED_USERS=your_email@example.com
       
+      # [可选] 日志级别: debug, info, warn, error.
+      - LOG_LEVEL=info
+      
       # =========== 登录供应商配置 (至少选择一种,推荐使用 Github) ===========
       # Google 登录配置
       # - OAUTH_GOOGLE_CLIENT_ID=

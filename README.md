@@ -135,6 +135,7 @@ services:
       - OAUTH_GITHUB_CLIENT_ID=你的ID
       - OAUTH_GITHUB_CLIENT_SECRET=你的Secret
       - OAUTH_GITHUB_REDIRECT_URI=https://你的域名/oauth/callback
+      - LOG_LEVEL=info
     restart: unless-stopped
 ```
 2. 运行 `docker compose up -d` 即可。
@@ -150,6 +151,7 @@ docker run -d --name 2fauth-worker \
   -e OAUTH_GITHUB_CLIENT_ID= \
   -e OAUTH_GITHUB_CLIENT_SECRET= \
   -e OAUTH_GITHUB_REDIRECT_URI=https://你的域名/oauth/callback \
+  -e LOG_LEVEL=info \
   nap0o/2fauth-worker:latest
 ```
 

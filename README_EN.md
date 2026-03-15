@@ -136,6 +136,7 @@ services:
       - OAUTH_GITHUB_CLIENT_ID=your_id
       - OAUTH_GITHUB_CLIENT_SECRET=your_secret
       - OAUTH_GITHUB_REDIRECT_URI=[https://your-domain.com/oauth/callback](https://your-domain.com/oauth/callback)
+      - LOG_LEVEL=info
     restart: unless-stopped
 ```
 2. Run `docker compose up -d`.
@@ -151,6 +152,7 @@ docker run -d --name 2fauth-worker \
   -e OAUTH_GITHUB_CLIENT_ID= \
   -e OAUTH_GITHUB_CLIENT_SECRET= \
   -e OAUTH_GITHUB_REDIRECT_URI=[https://your-domain.com/oauth/callback](https://your-domain.com/oauth/callback) \
+  -e LOG_LEVEL=info \
   nap0o/2fauth-worker:latest
 ```
 
@@ -225,7 +227,6 @@ Regardless of the deployment method, these parameters are critical:
 | `ENCRYPTION_KEY` | **Core**: Database encryption key | **DO NOT CHANGE** after setup! Requirement: 32+ characters. |
 | `JWT_SECRET` | Auth Token Secret | Requirement: 32+ characters. |
 | `OAUTH_ALLOWED_USERS` | **Whitelist**: Access Control | Emails or Telegram IDs, separated by commas. |
-
 
 ### Variable Mapping for Different Providers (Choose at least one):
 

@@ -20,7 +20,15 @@ type Bindings = EnvBindings & { ASSETS: { fetch: (req: Request) => Promise<Respo
 const app = new Hono<{ Bindings: Bindings }>();
 
 // 1. 全局中间件
-app.use('*', logger()); // 自动打印请求日志
+// 仅在日志级别允许时开启请求日志 (默认开启，除非显式指定为 error 或 warn)
+app.use('*', async (c, next) => {
+    const level = (c.env?.LOG_LEVEL || (typeof process !== 'undefined' ? process.env.LOG_LEVEL : 'info') || 'info').toLowerCase();
+    if (level !== 'error' && level !== 'warn') {
+        // 由于 Hono 的 logger 是一个普通的中间件，我们可以直接调用它
+        return logger()(c, next);
+    }
+    await next();
+});
 app.use('/api/*', cors({
     origin: (origin) => origin, // 允许携带 Cookie 时，Origin 不能为 *，这里改为动态反射
     credentials: true, // 允许浏览器发送 Cookie

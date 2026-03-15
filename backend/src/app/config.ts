@@ -92,6 +92,7 @@ export type EnvBindings = {
     OAUTH_ALLOW_ALL?: string;       // 是否允许所有用户登录 (仅推荐用于测试演示环境)
     JWT_SECRET: string;
     ENCRYPTION_KEY: string;
+    LOG_LEVEL?: string;
 };
 
 // 自定义错误类
